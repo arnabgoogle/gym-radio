@@ -2828,14 +2828,14 @@ input[type="range"]::-webkit-slider-thumb:hover {
     currentTrack: Object.assign({}, initialTrack),
     currentSource: 'default',
     currentRequester: 'Default Gym Mix',
-    playbackState: 'PLAYING',
+    playbackState: 'PAUSED',
     positionSeconds: 0,
     durationSeconds: initialTrack.duration || 188,
     volume: 100,
     queue: [],
     history: [],
     defaultPlaylistCount: 200,
-    currentDefaultIndex: 0,
+    currentDefaultIndex: 1,
     serverTime: new Date().toISOString()
   };
   Object.defineProperty(window, 'playerState', {
@@ -2854,7 +2854,145 @@ input[type="range"]::-webkit-slider-thumb:hover {
   let searchDebounceTimeout = null;
   let ytPlayer = null;
   let ytReady = false;
+  let ytActivelyPlaying = false;
   let audioContextActivated = false;
+  let userExplicitState = null; // 'PLAYING' | 'PAUSED' | null
+  let isMuted = false;
+
+  // --- Built-in Web Audio Workout Synthesizer (Fallback & Direct Audio) ---
+  const GymAudioEngine = (function () {
+    let ctx = null;
+    let masterGain = null;
+    let beatTimer = null;
+    let stepIndex = 0;
+
+    function ensureContext() {
+      if (!ctx) {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (AudioCtx) {
+          ctx = new AudioCtx();
+          masterGain = ctx.createGain();
+          masterGain.gain.value = 0.25;
+          masterGain.connect(ctx.destination);
+        }
+      }
+      if (ctx && ctx.state === 'suspended') {
+        ctx.resume().catch(() => {});
+      }
+      return ctx;
+    }
+
+    function playKick(time) {
+      if (!ctx || !masterGain) return;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(135, time);
+      osc.frequency.exponentialRampToValueAtTime(42, time + 0.11);
+      gain.gain.setValueAtTime(0.85, time);
+      gain.gain.exponentialRampToValueAtTime(0.001, time + 0.22);
+      osc.connect(gain);
+      gain.connect(masterGain);
+      osc.start(time);
+      osc.stop(time + 0.23);
+    }
+
+    function playHat(time, open) {
+      if (!ctx || !masterGain) return;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(6400, time);
+      const dur = open ? 0.12 : 0.04;
+      gain.gain.setValueAtTime(open ? 0.18 : 0.10, time);
+      gain.gain.exponentialRampToValueAtTime(0.001, time + dur);
+      osc.connect(gain);
+      gain.connect(masterGain);
+      osc.start(time);
+      osc.stop(time + dur + 0.01);
+    }
+
+    function playBassAndSynth(time, step, trackSeed) {
+      if (!ctx || !masterGain) return;
+      const scales = [
+        [110, 130.81, 146.83, 164.81],
+        [98, 116.54, 130.81, 146.83],
+        [123.47, 146.83, 164.81, 185.00],
+        [130.81, 155.56, 174.61, 196.00]
+      ];
+      const palette = scales[Math.abs(trackSeed) % scales.length];
+      const noteFreq = palette[Math.floor(step / 4) % palette.length];
+
+      // Off-beat driving bass
+      if (step % 2 === 1) {
+        const bass = ctx.createOscillator();
+        const bGain = ctx.createGain();
+        bass.type = 'sawtooth';
+        bass.frequency.setValueAtTime(noteFreq, time);
+        bGain.gain.setValueAtTime(0.22, time);
+        bGain.gain.exponentialRampToValueAtTime(0.001, time + 0.16);
+        bass.connect(bGain);
+        bGain.connect(masterGain);
+        bass.start(time);
+        bass.stop(time + 0.17);
+      }
+
+      // Melodic synth pluck on energetic steps
+      if (step % 4 === 0 || step % 4 === 3) {
+        const lead = ctx.createOscillator();
+        const lGain = ctx.createGain();
+        lead.type = 'triangle';
+        lead.frequency.setValueAtTime(noteFreq * 2, time);
+        lGain.gain.setValueAtTime(0.14, time);
+        lGain.gain.exponentialRampToValueAtTime(0.001, time + 0.19);
+        lead.connect(lGain);
+        lGain.connect(masterGain);
+        lead.start(time);
+        lead.stop(time + 0.20);
+      }
+    }
+
+    function tickStep() {
+      if (playerState.playbackState !== 'PLAYING' || ytActivelyPlaying || isMuted) {
+        return;
+      }
+      if (!ensureContext()) return;
+      const vol = (playerState.volume !== undefined ? playerState.volume : 100) / 100;
+      if (masterGain) {
+        masterGain.gain.setValueAtTime(vol * 0.28, ctx.currentTime);
+      }
+      const now = ctx.currentTime;
+      const s = stepIndex % 16;
+      const seed = (playerState.currentDefaultIndex || 1) + (playerState.currentTrack && playerState.currentTrack.duration ? playerState.currentTrack.duration : 0);
+
+      if (s % 4 === 0) playKick(now);
+      if (s % 2 === 1) playHat(now, s % 4 === 3);
+      playBassAndSynth(now, s, seed);
+      stepIndex = (stepIndex + 1) % 64;
+    }
+
+    return {
+      start() {
+        ensureContext();
+        if (!beatTimer) {
+          // 128 BPM 16th-note step = ~117ms
+          beatTimer = setInterval(tickStep, 117);
+        }
+      },
+      stop() {
+        if (beatTimer) {
+          clearInterval(beatTimer);
+          beatTimer = null;
+        }
+      },
+      setVolume(volPercent) {
+        if (ctx && masterGain) {
+          const v = isMuted ? 0 : Math.max(0, Math.min(1, volPercent / 100));
+          masterGain.gain.setValueAtTime(v * 0.28, ctx.currentTime);
+        }
+      }
+    };
+  })();
 
   // --- DOM Elements ---
   const el = {
@@ -3164,7 +3302,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
 
   // --- Local Phone Audio Stream Toggle ---
 
-  function setLocalAudioMode(enabled) {
+  function setLocalAudioMode(enabled, silent = false) {
     localAudioEnabled = enabled;
     localStorage.setItem('gym_radio_local_audio', localAudioEnabled ? 'true' : 'false');
 
@@ -3176,25 +3314,32 @@ input[type="range"]::-webkit-slider-thumb:hover {
     }
 
     if (localAudioEnabled) {
-      if (ytPlayer) {
-        if (ytPlayer.unMute) ytPlayer.unMute();
-        if (ytPlayer.setVolume) ytPlayer.setVolume(playerState.volume || 100);
-        if (ytPlayer.playVideo) ytPlayer.playVideo();
+      if (playerState.playbackState === 'PLAYING') {
+        GymAudioEngine.start();
+        if (ytPlayer) {
+          if (ytPlayer.unMute) ytPlayer.unMute();
+          if (ytPlayer.setVolume) ytPlayer.setVolume(playerState.volume || 100);
+          if (ytPlayer.playVideo) ytPlayer.playVideo();
+        } else {
+          initYouTubePlayer();
+        }
       } else {
         initYouTubePlayer();
       }
-      showToast('Phone Audio ON: Streaming floor audio to your device', 'success');
+      if (!silent) showToast('Phone Audio ON: Streaming floor audio to your device', 'success');
     } else {
-      if (!isReceptionistMode && ytPlayer && ytPlayer.pauseVideo) {
-        ytPlayer.pauseVideo();
+      if (!isReceptionistMode) {
+        if (ytPlayer && ytPlayer.pauseVideo) {
+          ytPlayer.pauseVideo();
+        }
       }
-      showToast('Phone Audio OFF', 'info');
+      if (!silent) showToast('Phone Audio OFF', 'info');
     }
   }
 
   // --- Receptionist Mode Toggle ---
 
-  function setReceptionistMode(enabled) {
+  function setReceptionistMode(enabled, silent = false) {
     isReceptionistMode = enabled;
     localStorage.setItem('gym_radio_dj_mode', isReceptionistMode ? 'true' : 'false');
 
@@ -3205,7 +3350,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
       el.receptionistToggle.classList.add('border-orange-500/60', 'bg-orange-500/10');
       initVisualizer();
       initYouTubePlayer();
-      showToast('Receptionist DJ Mode Activated: Audio Host Active', 'info');
+      if (!silent) showToast('Receptionist DJ Mode Activated: Audio Host Active', 'info');
     } else {
       el.receptionistConsole.classList.add('hidden');
       el.djModeBadge.textContent = 'OFF';
@@ -3265,7 +3410,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         height: '100%',
         width: '100%',
         playerVars: {
-          autoplay: 1,
+          autoplay: 0,
           controls: 1,
           modestbranding: 1,
           rel: 0,
@@ -3285,7 +3430,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
 
   function onPlayerReady(event) {
     if (el.ytPlaceholder) el.ytPlaceholder.classList.add('hidden');
-    el.playerEngineStatus.textContent = 'STREAMING ONLINE';
+    el.playerEngineStatus.textContent = 'READY';
     el.playerEngineStatus.className = 'text-emerald-400';
 
     if (playerState.volume !== undefined) {
@@ -3299,45 +3444,66 @@ input[type="range"]::-webkit-slider-thumb:hover {
 
   function onPlayerStateChange(event) {
     if (event.data === YT.PlayerState.ENDED) {
-      // Seamlessly auto-advance to next song!
-      autoAdvanceNextTrack();
+      ytActivelyPlaying = false;
+      const dur = playerState.durationSeconds || (playerState.currentTrack && playerState.currentTrack.duration) || 180;
+      if (playerState.playbackState === 'PLAYING' && playerState.positionSeconds >= dur - 5) {
+        autoAdvanceNextTrack();
+      }
     } else if (event.data === YT.PlayerState.PLAYING) {
+      // Never allow YouTube iframe to unpause if user state is PAUSED
+      if (playerState.playbackState !== 'PLAYING') {
+        ytActivelyPlaying = false;
+        try {
+          event.target.pauseVideo();
+        } catch (e) {}
+        return;
+      }
+      ytActivelyPlaying = true;
       audioContextActivated = true;
       if (el.djInitAudioBtn) el.djInitAudioBtn.classList.add('hidden');
-      playerState.playbackState = 'PLAYING';
+      if (el.playerEngineStatus) {
+        el.playerEngineStatus.textContent = 'STREAMING LIVE';
+        el.playerEngineStatus.className = 'text-emerald-400';
+      }
       lastMonotonicTime = performance.now();
       updateNowPlayingUI();
       reportProgress();
-    } else if (event.data === YT.PlayerState.PAUSED) {
-      playerState.playbackState = 'PAUSED';
-      updateNowPlayingUI();
-      reportProgress();
+    } else {
+      ytActivelyPlaying = false;
     }
   }
 
   function onPlayerError(event) {
-    console.warn('[GymRadio] YouTube Player error code:', event.data);
-    // In automated headless browser runners, YouTube embeds cannot decode video frames without user gestures.
-    // Suppress infinite skip loop in automated test environments.
-    if (navigator.webdriver) {
-      return;
+    // Do NOT auto-skip tracks or change playbackState when a YouTube video blocks third-party embeds (Error 101/150).
+    // Instead, fall back cleanly to the built-in Web Audio workout synthesizer for the full song duration.
+    ytActivelyPlaying = false;
+    if (el.playerEngineStatus) {
+      el.playerEngineStatus.textContent = 'SYNTH AUDIO ACTIVE';
+      el.playerEngineStatus.className = 'text-cyan-400';
     }
-    showToast(`Skipping unplayable video (${event.data})...`, 'info');
-    setTimeout(() => {
-      autoAdvanceNextTrack();
-    }, 1000);
+    if (playerState.playbackState === 'PLAYING') {
+      GymAudioEngine.start();
+    }
   }
 
   function syncTrackToPlayer(videoId, startSeconds = 0) {
-    if (!ytPlayer || !ytPlayer.loadVideoById) return;
+    if (!ytPlayer) return;
 
     try {
+      const startSec = Math.floor(startSeconds || 0);
       const currentUrl = ytPlayer.getVideoUrl ? ytPlayer.getVideoUrl() : '';
       if (!currentUrl || !currentUrl.includes(videoId)) {
-        ytPlayer.loadVideoById({
-          videoId: videoId,
-          startSeconds: Math.floor(startSeconds || 0)
-        });
+        if (playerState.playbackState === 'PLAYING' && ytPlayer.loadVideoById) {
+          ytPlayer.loadVideoById({
+            videoId: videoId,
+            startSeconds: startSec
+          });
+        } else if (ytPlayer.cueVideoById) {
+          ytPlayer.cueVideoById({
+            videoId: videoId,
+            startSeconds: startSec
+          });
+        }
       }
     } catch (e) {
       console.warn('Could not sync video to player:', e);
@@ -3345,11 +3511,10 @@ input[type="range"]::-webkit-slider-thumb:hover {
   }
 
   function reportProgress() {
-    if (!ytPlayer || !ytPlayer.getCurrentTime) return;
     try {
-      const currentPos = ytPlayer.getCurrentTime() || 0;
-      const duration = ytPlayer.getDuration() || playerState.durationSeconds || 180;
-      const stateStr = playerState.playbackState || 'PLAYING';
+      const currentPos = playerState.positionSeconds || 0;
+      const duration = playerState.durationSeconds || 180;
+      const stateStr = playerState.playbackState || 'PAUSED';
 
       if (ws && ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({
@@ -3372,67 +3537,82 @@ input[type="range"]::-webkit-slider-thumb:hover {
     } catch (err) {}
   }
 
+  function sortUserQueue() {
+    if (!playerState.queue || !Array.isArray(playerState.queue)) return;
+    playerState.queue.sort((a, b) => {
+      const upDiff = (b.upvotes || 0) - (a.upvotes || 0);
+      if (upDiff !== 0) return upDiff;
+      const tA = a.requestedAt || a.requested_at || '';
+      const tB = b.requestedAt || b.requested_at || '';
+      if (tA !== tB) return tA < tB ? -1 : 1;
+      return (a.id || 0) - (b.id || 0);
+    });
+  }
+
   // --- Autonomous Track Progression Engine ---
 
   function autoAdvanceNextTrack() {
-    console.log('[GymRadio] Advancing to next track...');
     const prevTrack = playerState.currentTrack;
     if (prevTrack && playerState.history) {
       playerState.history.unshift(prevTrack);
       if (playerState.history.length > 20) playerState.history.pop();
     }
 
+    const playlist = (defaultPlaylistTracks && defaultPlaylistTracks.length > 0)
+      ? defaultPlaylistTracks
+      : BUILTIN_DEFAULT_TRACKS;
+
+    sortUserQueue();
+
     // 1. If active user requests exist, pop the top request
     if (playerState.queue && playerState.queue.length > 0) {
       const nextRequest = playerState.queue.shift();
+      const reqVid = nextRequest.videoId || nextRequest.video_id;
       playerState.currentTrack = {
-        videoId: nextRequest.videoId || nextRequest.video_id,
+        videoId: reqVid,
         title: nextRequest.title,
         artist: nextRequest.artist,
         duration: nextRequest.duration || 180,
-        thumbnailUrl: nextRequest.thumbnailUrl || nextRequest.thumbnail_url || `https://i.ytimg.com/vi/${nextRequest.videoId}/hqdefault.jpg`,
+        thumbnailUrl: nextRequest.thumbnailUrl || nextRequest.thumbnail_url || `https://i.ytimg.com/vi/${reqVid}/hqdefault.jpg`,
         requestedBy: nextRequest.requestedBy || nextRequest.requested_by,
         isExplicit: false,
         genre: 'User Request'
       };
+      if (playlist.length > 0 && playlist[(playerState.currentDefaultIndex || 0) % playlist.length].videoId === reqVid) {
+        playerState.currentDefaultIndex = ((playerState.currentDefaultIndex || 0) + 1) % playlist.length;
+      }
       playerState.currentSource = 'queue';
       playerState.currentRequester = playerState.currentTrack.requestedBy;
-      showToast(`🔥 Playing request from @${playerState.currentRequester}: "${playerState.currentTrack.title}"`, 'info');
+      showToast(`Playing request from @${playerState.currentRequester}: "${playerState.currentTrack.title}"`, 'info');
     } else {
       // 2. Fall back to next track in 200 default songs
-      const playlist = (defaultPlaylistTracks && defaultPlaylistTracks.length > 0)
-        ? defaultPlaylistTracks
-        : BUILTIN_DEFAULT_TRACKS;
-      
-      playerState.currentDefaultIndex = ((playerState.currentDefaultIndex || 0) + 1) % playlist.length;
-      const nextDef = playlist[playerState.currentDefaultIndex];
+      let nextIdx = (playerState.currentDefaultIndex !== undefined ? playerState.currentDefaultIndex : 1) % playlist.length;
+      if (prevTrack && playlist[nextIdx] && playlist[nextIdx].videoId === (prevTrack.videoId || prevTrack.video_id)) {
+        nextIdx = (nextIdx + 1) % playlist.length;
+      }
+      const nextDef = playlist[nextIdx];
+      playerState.currentDefaultIndex = (nextIdx + 1) % playlist.length;
       playerState.currentTrack = Object.assign({}, nextDef);
       playerState.currentSource = 'default';
       playerState.currentRequester = 'Default Gym Mix';
     }
 
+    playerState.upcoming = null;
     playerState.positionSeconds = 0;
     playerState.durationSeconds = playerState.currentTrack.duration || 180;
     playerState.playbackState = 'PLAYING';
+    userExplicitState = 'PLAYING';
     lastMonotonicTime = performance.now();
 
+    GymAudioEngine.start();
     updateNowPlayingUI();
     renderQueue();
 
-    if (ytPlayer && ytPlayer.loadVideoById) {
-      try {
-        ytPlayer.loadVideoById({
-          videoId: playerState.currentTrack.videoId,
-          startSeconds: 0
-        });
-        ytPlayer.playVideo();
-      } catch (err) {}
+    if (ytPlayer) {
+      syncTrackToPlayer(playerState.currentTrack.videoId, 0);
     }
 
     fetch(`${API_BASE}/api/player/next`, { method: 'POST' }).catch(() => {});
-    if (ws && ws.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify({ type: 'TRACK_ENDED' }));
-    }
   }
   window.autoAdvanceNextTrack = autoAdvanceNextTrack;
 
@@ -3557,26 +3737,30 @@ input[type="range"]::-webkit-slider-thumb:hover {
         requested_by: currentLdap
       };
 
-      // Optimistically push to local queue immediately
-      const newQueueItem = {
-        id: Date.now(),
-        videoId: vid,
-        title: track.title,
-        artist: track.artist,
-        duration: track.duration || 180,
-        thumbnailUrl: thumb,
-        requestedBy: currentLdap,
-        requestedAt: new Date().toISOString(),
-        upvotes: 1,
-        upvotedBy: [currentLdap],
-        status: 'queued'
-      };
-
+      // Optimistically push to local queue immediately if not already queued
       if (!playerState.queue) playerState.queue = [];
-      playerState.queue.push(newQueueItem);
-      renderQueue();
+      const exists = playerState.queue.some(q => (q.videoId || q.video_id) === vid);
+      if (!exists) {
+        const newQueueItem = {
+          id: Date.now(),
+          videoId: vid,
+          title: track.title,
+          artist: track.artist,
+          duration: track.duration || 180,
+          thumbnailUrl: thumb,
+          requestedBy: currentLdap,
+          requestedAt: new Date().toISOString(),
+          upvotes: 1,
+          upvotedBy: [currentLdap],
+          status: 'queued'
+        };
+        playerState.queue.push(newQueueItem);
+        playerState.upcoming = null;
+        sortUserQueue();
+        renderQueue();
+      }
 
-      showToast(`Requested "${track.title}"! Bumped to queue.`, 'success');
+      showToast(`Requested "${track.title}"! Added to queue.`, 'success');
       switchTab('queue');
 
       const res = await fetch(`${API_BASE}/api/queue`, {
@@ -3589,8 +3773,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         fetchState();
       }
     } catch (e) {
-      // Local request was already queued optimistically
-      showToast(`Requested "${track.title}"! Bumped to floor queue.`, 'success');
+      showToast(`Requested "${track.title}"! Added to floor queue.`, 'success');
       switchTab('queue');
     }
   }
@@ -3603,13 +3786,15 @@ input[type="range"]::-webkit-slider-thumb:hover {
       return;
     }
 
-    // Optimistic bump
+    // Optimistic bump and dynamic re-sort
     if (item) {
       item.upvotes = (item.upvotes || 0) + 1;
       if (!item.upvotedBy) item.upvotedBy = [];
       if (!item.upvoted_by) item.upvoted_by = [];
       item.upvotedBy.push(currentLdap);
       item.upvoted_by.push(currentLdap);
+      playerState.upcoming = null;
+      sortUserQueue();
       renderQueue();
     }
 
@@ -3629,11 +3814,11 @@ input[type="range"]::-webkit-slider-thumb:hover {
       }
 
       if (res.ok) {
-        showToast('🔥 Upvoted! Song pushed higher in queue.', 'success');
+        showToast('Upvoted! Song pushed higher in queue.', 'success');
         fetchState();
       }
     } catch (e) {
-      showToast('🔥 Upvoted!', 'success');
+      showToast('Upvoted!', 'success');
     }
   }
 
@@ -3644,30 +3829,33 @@ input[type="range"]::-webkit-slider-thumb:hover {
   async function receptionistPreviousTrack() {
     if (playerState.positionSeconds > 3) {
       if (ytPlayer && ytPlayer.seekTo) {
-        ytPlayer.seekTo(0, true);
+        try { ytPlayer.seekTo(0, true); } catch (e) {}
       }
       playerState.positionSeconds = 0;
+      lastMonotonicTime = performance.now();
       updateNowPlayingUI();
       showToast('Restarted current track', 'info');
       return;
     }
 
+    const playlist = (defaultPlaylistTracks && defaultPlaylistTracks.length > 0) ? defaultPlaylistTracks : BUILTIN_DEFAULT_TRACKS;
+
     // Step back in history if available
     if (playerState.history && playerState.history.length > 0) {
       const prevTrack = playerState.history.shift();
       playerState.currentTrack = Object.assign({}, prevTrack);
+      playerState.upcoming = null;
       playerState.positionSeconds = 0;
       playerState.durationSeconds = prevTrack.duration || 180;
       playerState.playbackState = 'PLAYING';
+      userExplicitState = 'PLAYING';
       lastMonotonicTime = performance.now();
+      GymAudioEngine.start();
       updateNowPlayingUI();
       renderQueue();
 
-      if (ytPlayer && ytPlayer.loadVideoById) {
-        ytPlayer.loadVideoById({
-          videoId: prevTrack.videoId,
-          startSeconds: 0
-        });
+      if (ytPlayer) {
+        syncTrackToPlayer(prevTrack.videoId || prevTrack.video_id, 0);
       }
       showToast(`Playing previous: ${prevTrack.title}`, 'info');
       fetch(`${API_BASE}/api/player/previous`, { method: 'POST' }).catch(() => {});
@@ -3675,37 +3863,57 @@ input[type="range"]::-webkit-slider-thumb:hover {
     }
 
     // Otherwise cycle back 1 default song
-    const playlist = (defaultPlaylistTracks && defaultPlaylistTracks.length > 0) ? defaultPlaylistTracks : BUILTIN_DEFAULT_TRACKS;
-    playerState.currentDefaultIndex = (playerState.currentDefaultIndex - 1 + playlist.length) % playlist.length;
-    playerState.currentTrack = Object.assign({}, playlist[playerState.currentDefaultIndex]);
+    const curVid = playerState.currentTrack ? (playerState.currentTrack.videoId || playerState.currentTrack.video_id) : '';
+    let curIdx = playlist.findIndex(t => t.videoId === curVid);
+    if (curIdx < 0) curIdx = 0;
+    const prevIdx = (curIdx - 1 + playlist.length) % playlist.length;
+    playerState.currentTrack = Object.assign({}, playlist[prevIdx]);
+    playerState.currentDefaultIndex = curIdx;
+    playerState.upcoming = null;
     playerState.positionSeconds = 0;
     playerState.durationSeconds = playerState.currentTrack.duration || 180;
+    playerState.playbackState = 'PLAYING';
+    userExplicitState = 'PLAYING';
     lastMonotonicTime = performance.now();
+    GymAudioEngine.start();
     updateNowPlayingUI();
     renderQueue();
 
-    if (ytPlayer && ytPlayer.loadVideoById) {
-      ytPlayer.loadVideoById({
-        videoId: playerState.currentTrack.videoId,
-        startSeconds: 0
-      });
+    if (ytPlayer) {
+      syncTrackToPlayer(playerState.currentTrack.videoId, 0);
     }
     showToast(`Playing: ${playerState.currentTrack.title}`, 'info');
     fetch(`${API_BASE}/api/player/previous`, { method: 'POST' }).catch(() => {});
   }
 
   async function receptionistPlayPause() {
-    const isPlaying = playerState.playbackState === 'PLAYING';
-    playerState.playbackState = isPlaying ? 'PAUSED' : 'PLAYING';
+    const wasPlaying = playerState.playbackState === 'PLAYING';
+    const nextState = wasPlaying ? 'PAUSED' : 'PLAYING';
+    playerState.playbackState = nextState;
+    userExplicitState = nextState;
     lastMonotonicTime = performance.now();
     updateNowPlayingUI();
 
-    if (ytPlayer) {
-      if (isPlaying && ytPlayer.pauseVideo) ytPlayer.pauseVideo();
-      if (!isPlaying && ytPlayer.playVideo) ytPlayer.playVideo();
+    if (nextState === 'PLAYING') {
+      GymAudioEngine.start();
+      if (ytPlayer) {
+        try {
+          if (ytPlayer.playVideo) ytPlayer.playVideo();
+        } catch (e) {}
+      }
+      showToast(`Playing: ${playerState.currentTrack ? playerState.currentTrack.title : 'Gym Radio'}`, 'info');
+    } else {
+      GymAudioEngine.stop();
+      ytActivelyPlaying = false;
+      if (ytPlayer) {
+        try {
+          if (ytPlayer.pauseVideo) ytPlayer.pauseVideo();
+        } catch (e) {}
+      }
+      showToast('Playback Paused', 'info');
     }
 
-    const endpoint = isPlaying ? `${API_BASE}/api/player/pause` : `${API_BASE}/api/player/play`;
+    const endpoint = wasPlaying ? `${API_BASE}/api/player/pause` : `${API_BASE}/api/player/play`;
     fetch(endpoint, { method: 'POST' }).catch(() => {});
   }
 
@@ -3713,6 +3921,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
     if (!confirm('Remove this track from the gym request queue?')) return;
     if (playerState.queue) {
       playerState.queue = playerState.queue.filter(q => q.id !== queueId);
+      playerState.upcoming = null;
       renderQueue();
     }
     showToast('Track removed from floor queue.', 'success');
@@ -3774,14 +3983,29 @@ input[type="range"]::-webkit-slider-thumb:hover {
 
     const trackChanged = Boolean(newVid && oldVid && newVid !== oldVid);
     const prevPos = playerState.positionSeconds;
+    const prevPlaybackState = playerState.playbackState;
 
     playerState = Object.assign({}, playerState, newState);
-    window.playerState = playerState;
+
+    // Respect explicit user Play/Pause state so background polls never unpause a paused user or pause an active user
+    if (userExplicitState !== null) {
+      playerState.playbackState = userExplicitState;
+    } else if (newState.playbackState) {
+      playerState.playbackState = newState.playbackState;
+    } else {
+      playerState.playbackState = prevPlaybackState;
+    }
+
+    if (playerState.playbackState === 'PLAYING') {
+      GymAudioEngine.start();
+    } else {
+      GymAudioEngine.stop();
+    }
 
     if (trackChanged) {
       playerState.positionSeconds = newState.positionSeconds || 0;
       lastMonotonicTime = performance.now();
-      if ((isReceptionistMode || localAudioEnabled) && ytPlayer && ytPlayer.loadVideoById) {
+      if ((isReceptionistMode || localAudioEnabled) && ytPlayer) {
         syncTrackToPlayer(playerState.currentTrack.videoId, playerState.positionSeconds);
       }
     } else {
@@ -3791,10 +4015,11 @@ input[type="range"]::-webkit-slider-thumb:hover {
       } else if (newState.positionSeconds > prevPos) {
         playerState.positionSeconds = Math.max(prevPos, newState.positionSeconds);
       } else {
-        // newState.positionSeconds <= prevPos: preserve active advancing local timer
         playerState.positionSeconds = prevPos;
       }
     }
+
+    window.playerState = playerState;
 
     if (newState.currentLocation && !localStorage.getItem('gym_radio_location')) {
       currentLocation = newState.currentLocation;
@@ -3811,14 +4036,29 @@ input[type="range"]::-webkit-slider-thumb:hover {
   window.handleStateUpdate = handleStateUpdate;
 
   function handlePlayerCommand(cmd) {
-    if (!isReceptionistMode && !localAudioEnabled) return;
-    if (!ytPlayer) return;
-    if (cmd.action === 'loadTrack' && cmd.videoId) {
-      syncTrackToPlayer(cmd.videoId, cmd.positionSeconds || 0);
-    } else if (cmd.action === 'play' && ytPlayer.playVideo) {
-      ytPlayer.playVideo();
-    } else if (cmd.action === 'pause' && ytPlayer.pauseVideo) {
-      ytPlayer.pauseVideo();
+    if (!cmd) return;
+    if (cmd.action === 'play') {
+      userExplicitState = 'PLAYING';
+      playerState.playbackState = 'PLAYING';
+      lastMonotonicTime = performance.now();
+      GymAudioEngine.start();
+      if ((isReceptionistMode || localAudioEnabled) && ytPlayer && ytPlayer.playVideo) {
+        try { ytPlayer.playVideo(); } catch (e) {}
+      }
+      updateNowPlayingUI();
+    } else if (cmd.action === 'pause') {
+      userExplicitState = 'PAUSED';
+      playerState.playbackState = 'PAUSED';
+      GymAudioEngine.stop();
+      ytActivelyPlaying = false;
+      if (ytPlayer && ytPlayer.pauseVideo) {
+        try { ytPlayer.pauseVideo(); } catch (e) {}
+      }
+      updateNowPlayingUI();
+    } else if (cmd.action === 'loadTrack' && cmd.videoId) {
+      if ((isReceptionistMode || localAudioEnabled) && ytPlayer) {
+        syncTrackToPlayer(cmd.videoId, cmd.positionSeconds || 0);
+      }
     }
   }
 
@@ -3855,12 +4095,14 @@ input[type="range"]::-webkit-slider-thumb:hover {
       el.npSourceBadge.className = 'px-2.5 py-0.5 rounded-full text-[11px] font-bold tracking-wider uppercase bg-orange-500/20 text-orange-400 border border-orange-500/30 flex items-center gap-1';
     } else {
       el.npSourceText.textContent = 'Default Mix';
-      const trackIdx = (playerState.currentDefaultIndex || 0) + 1;
-      el.npRequesterText.textContent = `Default 200 Mix (#${trackIdx})`;
+      const playlist = (defaultPlaylistTracks && defaultPlaylistTracks.length > 0) ? defaultPlaylistTracks : BUILTIN_DEFAULT_TRACKS;
+      const foundIdx = playlist.findIndex(t => t.videoId === videoId);
+      const trackNum = foundIdx >= 0 ? foundIdx + 1 : 1;
+      el.npRequesterText.textContent = `Default 200 Mix (#${trackNum})`;
       el.npSourceBadge.className = 'px-2.5 py-0.5 rounded-full text-[11px] font-bold tracking-wider uppercase bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 flex items-center gap-1';
     }
 
-    // Playback state equalizer & vinyl spin
+    // Playback state equalizer & play/pause icon state
     if (isPlaying) {
       el.npEqualizer.classList.remove('eq-paused');
       el.djPlayIcon.classList.add('hidden');
@@ -3889,37 +4131,37 @@ input[type="range"]::-webkit-slider-thumb:hover {
   function renderQueue() {
     let items = [];
 
-    // 1. Prefer backend playerState.upcoming if provided
-    if (playerState.upcoming && Array.isArray(playerState.upcoming) && playerState.upcoming.length > 0) {
-      items = playerState.upcoming.slice(0, 5);
-    } else {
-      // 2. Client-side compilation: active user requests take top rank
-      const userQueue = (playerState.queue || []).slice(0, 5);
-      userQueue.forEach(item => {
-        items.push(Object.assign({}, item, { isDefaultMix: false }));
-      });
+    // Always build the 5 upcoming tracks dynamically from the active user queue + default playlist padding
+    sortUserQueue();
+    const userQueue = (playerState.queue || []).slice(0, 5);
+    userQueue.forEach(item => {
+      items.push(Object.assign({}, item, { isDefaultMix: false }));
+    });
 
-      // Pad up to 5 songs with upcoming tracks from the default 200 playlist
-      const playlist = (defaultPlaylistTracks && defaultPlaylistTracks.length > 0) ? defaultPlaylistTracks : BUILTIN_DEFAULT_TRACKS;
-      if (items.length < 5 && playlist.length > 0) {
-        const needed = 5 - items.length;
-        const startIdx = ((playerState.currentDefaultIndex || 0) + 1) % playlist.length;
-        for (let i = 0; i < needed; i++) {
-          const defTrack = playlist[(startIdx + i) % playlist.length];
-          if (defTrack) {
-            items.push({
-              id: defTrack.id || `default-${startIdx + i}`,
-              videoId: defTrack.videoId,
-              title: defTrack.title,
-              artist: defTrack.artist,
-              duration: defTrack.duration,
-              thumbnailUrl: defTrack.thumbnailUrl,
-              requestedBy: 'Default Gym Mix - Up Next',
-              upvotes: 0,
-              upvotedBy: [],
-              isDefaultMix: true
-            });
-          }
+    // Pad up to 5 songs with upcoming tracks from the default 200 playlist
+    const playlist = (defaultPlaylistTracks && defaultPlaylistTracks.length > 0) ? defaultPlaylistTracks : BUILTIN_DEFAULT_TRACKS;
+    if (items.length < 5 && playlist.length > 0) {
+      const needed = 5 - items.length;
+      const curVid = playerState.currentTrack ? (playerState.currentTrack.videoId || playerState.currentTrack.video_id) : '';
+      let startIdx = playerState.currentDefaultIndex !== undefined ? playerState.currentDefaultIndex : 1;
+      if (playlist[startIdx % playlist.length] && playlist[startIdx % playlist.length].videoId === curVid) {
+        startIdx = (startIdx + 1) % playlist.length;
+      }
+      for (let i = 0; i < needed; i++) {
+        const defTrack = playlist[(startIdx + i) % playlist.length];
+        if (defTrack) {
+          items.push({
+            id: defTrack.id || `default-${startIdx + i}`,
+            videoId: defTrack.videoId,
+            title: defTrack.title,
+            artist: defTrack.artist,
+            duration: defTrack.duration,
+            thumbnailUrl: defTrack.thumbnailUrl,
+            requestedBy: 'Default Gym Mix - Up Next',
+            upvotes: 0,
+            upvotedBy: [],
+            isDefaultMix: true
+          });
         }
       }
     }
@@ -3960,7 +4202,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
       let rankLabel = `#${rank}`;
       if (rank === 1) {
         rankClass = 'rank-1';
-        rankLabel = isDefault ? '⚡ #1 NEXT' : '🔥 #1 NEXT';
+        rankLabel = '#1 NEXT';
       } else if (rank === 2) {
         rankClass = 'rank-2';
         rankLabel = `#2`;
@@ -3981,7 +4223,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         actionBtnHtml = `
           <button data-track='${escapeHtml(JSON.stringify(item))}' class="btn-boost-track flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-cyan-500/20 hover:bg-cyan-500 text-cyan-300 hover:text-black border border-cyan-500/40 transition-all shadow-md active:scale-95">
             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-            <span>⚡ Boost</span>
+            <span>Boost</span>
           </button>
         `;
       } else {
@@ -4300,6 +4542,25 @@ input[type="range"]::-webkit-slider-thumb:hover {
       el.heroLocalAudioToggle.addEventListener('click', () => setLocalAudioMode(!localAudioEnabled));
     }
 
+    // Progress Bar Click-to-Seek
+    const progressContainer = document.getElementById('progress-container');
+    if (progressContainer) {
+      progressContainer.addEventListener('click', (e) => {
+        const rect = progressContainer.getBoundingClientRect();
+        if (!rect.width) return;
+        const clickRatio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+        const duration = playerState.durationSeconds || (playerState.currentTrack && playerState.currentTrack.duration) || 180;
+        const targetSec = Math.floor(clickRatio * duration);
+        playerState.positionSeconds = targetSec;
+        lastMonotonicTime = performance.now();
+        if (ytPlayer && ytPlayer.seekTo && ytActivelyPlaying) {
+          try { ytPlayer.seekTo(targetSec, true); } catch (err) {}
+        }
+        updateNowPlayingUI();
+        reportProgress();
+      });
+    }
+
     // Receptionist Mode Switch
     el.receptionistToggle.addEventListener('click', () => {
       setReceptionistMode(!isReceptionistMode);
@@ -4311,12 +4572,17 @@ input[type="range"]::-webkit-slider-thumb:hover {
 
     // Audio context activation button
     el.djInitAudioBtn.addEventListener('click', () => {
+      userExplicitState = 'PLAYING';
+      playerState.playbackState = 'PLAYING';
+      lastMonotonicTime = performance.now();
+      GymAudioEngine.start();
       if (ytPlayer && ytPlayer.playVideo) {
-        ytPlayer.playVideo();
-        audioContextActivated = true;
-        el.djInitAudioBtn.classList.add('hidden');
-        showToast('Gym speaker audio activated!', 'success');
+        try { ytPlayer.playVideo(); } catch (e) {}
       }
+      audioContextActivated = true;
+      el.djInitAudioBtn.classList.add('hidden');
+      updateNowPlayingUI();
+      showToast('Gym speaker audio activated!', 'success');
     });
 
     // Volume Slider
@@ -4324,8 +4590,10 @@ input[type="range"]::-webkit-slider-thumb:hover {
     el.djVolumeSlider.addEventListener('input', (e) => {
       const val = parseInt(e.target.value, 10);
       el.djVolumeDisplay.textContent = `${val}%`;
+      isMuted = val === 0;
+      GymAudioEngine.setVolume(val);
       if (ytPlayer && ytPlayer.setVolume) {
-        ytPlayer.setVolume(val);
+        try { ytPlayer.setVolume(val); } catch (err) {}
       }
       playerState.volume = val;
 
@@ -4341,15 +4609,22 @@ input[type="range"]::-webkit-slider-thumb:hover {
 
     // Mute toggle
     el.djVolumeMuteBtn.addEventListener('click', () => {
-      if (!ytPlayer) return;
-      if (ytPlayer.isMuted && ytPlayer.isMuted()) {
-        ytPlayer.unMute();
-        el.djVolumeSlider.value = playerState.volume || 100;
-        el.djVolumeDisplay.textContent = `${playerState.volume || 100}%`;
-      } else if (ytPlayer.mute) {
-        ytPlayer.mute();
+      isMuted = !isMuted;
+      if (isMuted) {
+        GymAudioEngine.setVolume(0);
+        if (ytPlayer && ytPlayer.mute) {
+          try { ytPlayer.mute(); } catch (e) {}
+        }
         el.djVolumeSlider.value = 0;
         el.djVolumeDisplay.textContent = '0%';
+      } else {
+        const vol = playerState.volume || 100;
+        GymAudioEngine.setVolume(vol);
+        if (ytPlayer && ytPlayer.unMute) {
+          try { ytPlayer.unMute(); } catch (e) {}
+        }
+        el.djVolumeSlider.value = vol;
+        el.djVolumeDisplay.textContent = `${vol}%`;
       }
     });
 
@@ -4372,9 +4647,9 @@ input[type="range"]::-webkit-slider-thumb:hover {
         return;
       }
 
-      // Query true YouTube player time if available and actively playing in receptionist / local audio mode
+      // Query true YouTube player time only if YouTube iframe is actively playing without embed error
       let accurateTime = null;
-      if ((isReceptionistMode || localAudioEnabled) && ytPlayer && ytPlayer.getCurrentTime && typeof ytPlayer.getCurrentTime === 'function') {
+      if (ytActivelyPlaying && (isReceptionistMode || localAudioEnabled) && ytPlayer && typeof ytPlayer.getCurrentTime === 'function') {
         try {
           const isYtPlaying = ytPlayer.getPlayerState && ytPlayer.getPlayerState() === (window.YT ? YT.PlayerState.PLAYING : 1);
           if (isYtPlaying) {
@@ -4412,10 +4687,10 @@ input[type="range"]::-webkit-slider-thumb:hover {
     updateLdapUI();
     renderLocations();
     setupEventListeners();
-    setReceptionistMode(isReceptionistMode);
-    setLocalAudioMode(localAudioEnabled);
+    setReceptionistMode(isReceptionistMode, true);
+    setLocalAudioMode(localAudioEnabled, true);
 
-    // Initial autonomous render
+    // Initial autonomous render (starts PAUSED at 00:00 until user clicks Play)
     updateNowPlayingUI();
     renderQueue();
     renderDefaultPlaylist(BUILTIN_DEFAULT_TRACKS);
