@@ -2838,6 +2838,12 @@ input[type="range"]::-webkit-slider-thumb:hover {
     currentDefaultIndex: 0,
     serverTime: new Date().toISOString()
   };
+  Object.defineProperty(window, 'playerState', {
+    get() { return playerState; },
+    set(v) { Object.assign(playerState, v); },
+    configurable: true
+  });
+  window.getPlayerState = () => playerState;
 
   let previousQueueMap = new Map(); // id -> { rank, upvotes }
   let ws = null;
@@ -3423,6 +3429,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
       ws.send(JSON.stringify({ type: 'TRACK_ENDED' }));
     }
   }
+  window.autoAdvanceNextTrack = autoAdvanceNextTrack;
 
   // --- Dynamic Audio Visualizer Effect ---
 
@@ -3764,6 +3771,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
     const prevPos = playerState.positionSeconds;
 
     playerState = Object.assign({}, playerState, newState);
+    window.playerState = playerState;
 
     if (trackChanged) {
       playerState.positionSeconds = newState.positionSeconds || 0;
@@ -3772,13 +3780,14 @@ input[type="range"]::-webkit-slider-thumb:hover {
         syncTrackToPlayer(playerState.currentTrack.videoId, playerState.positionSeconds);
       }
     } else {
-      // PREVENT TIMER RESET BUG: If local timer is advancing, never overwrite with zero or stale data!
-      if (!newState.positionSeconds || newState.positionSeconds === 0) {
+      // PREVENT TIMER RESET BUG: Never allow stale server polling data to reset or drag local position backward!
+      if (!newState.positionSeconds || newState.positionSeconds <= 0) {
         playerState.positionSeconds = prevPos;
-      } else if (Math.abs(newState.positionSeconds - prevPos) > 6) {
-        playerState.positionSeconds = newState.positionSeconds;
-      } else {
+      } else if (newState.positionSeconds > prevPos) {
         playerState.positionSeconds = Math.max(prevPos, newState.positionSeconds);
+      } else {
+        // newState.positionSeconds <= prevPos: preserve active advancing local timer
+        playerState.positionSeconds = prevPos;
       }
     }
 
@@ -3794,6 +3803,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
     updateNowPlayingUI();
     renderQueue();
   }
+  window.handleStateUpdate = handleStateUpdate;
 
   function handlePlayerCommand(cmd) {
     if (!isReceptionistMode && !localAudioEnabled) return;
@@ -4373,6 +4383,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
       } else {
         playerState.positionSeconds += elapsedDelta;
       }
+      window.playerState = playerState;
 
       const duration = playerState.durationSeconds || playerState.currentTrack.duration || 180;
       // Auto-advance when natural song duration completes
