@@ -3628,6 +3628,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         body: JSON.stringify({ location: currentLocation })
       });
     } catch (e) {}
+    FloorCloudSync.connect();
   }
 
   function toggleLocationDropdown(e) {
@@ -3890,6 +3891,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
       playerState.currentSource = 'queue';
       playerState.currentRequester = playerState.currentTrack.requestedBy;
       showToast(`Playing request from @${playerState.currentRequester}: "${playerState.currentTrack.title}"`, 'info');
+      FloorCloudSync.publish({ type: 'ADVANCE', videoId: reqVid, id: nextRequest.id });
     } else {
       // 2. Fall back to next track in 200 default songs
       let nextIdx = (playerState.currentDefaultIndex !== undefined ? playerState.currentDefaultIndex : 1) % playlist.length;
@@ -4071,6 +4073,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         playerState.upcoming = null;
         sortUserQueue();
         renderQueue();
+        FloorCloudSync.publish({ type: 'REQUEST', item: newQueueItem });
       }
 
       showToast(`Requested "${track.title}"! Added to queue.`, 'success');
@@ -4111,6 +4114,13 @@ input[type="range"]::-webkit-slider-thumb:hover {
       playerState.upcoming = null;
       sortUserQueue();
       renderQueue();
+      FloorCloudSync.publish({
+        type: 'UPVOTE',
+        id: item.id,
+        videoId: item.videoId || item.video_id,
+        ldap: currentLdap,
+        upvotedBy: item.upvotedBy
+      });
     }
 
     if (!isDirectBackend) {
@@ -4229,10 +4239,14 @@ input[type="range"]::-webkit-slider-thumb:hover {
 
   async function receptionistRemoveTrack(queueId) {
     if (!confirm('Remove this track from the gym request queue?')) return;
+    const removed = (playerState.queue || []).find(q => q.id === queueId);
     if (playerState.queue) {
       playerState.queue = playerState.queue.filter(q => q.id !== queueId);
       playerState.upcoming = null;
       renderQueue();
+    }
+    if (removed) {
+      FloorCloudSync.publish({ type: 'REMOVE', id: queueId, videoId: removed.videoId || removed.video_id });
     }
     showToast('Track removed from floor queue.', 'success');
     apiFetch('/api/receptionist/remove', {
@@ -4241,6 +4255,87 @@ input[type="range"]::-webkit-slider-thumb:hover {
       body: JSON.stringify({ id: queueId, queue_id: queueId })
     }).catch(() => {});
   }
+
+  // --- Zero-Login Multi-Phone Cloud Sync (Works on Public GitHub Pages Without Corp Login) ---
+
+  const FloorCloudSync = (function () {
+    let evtSource = null;
+    let activeTopic = null;
+    const seenEventIds = new Set();
+
+    function getTopic() {
+      const slug = (currentLocation || 'Ananta').toLowerCase().replace(/[^a-z0-9]/g, '_');
+      return `gym_radio_floor_v2_${slug}`;
+    }
+
+    function applyCloudEvent(evt) {
+      if (!evt || !evt.type) return;
+      if (!playerState.queue) playerState.queue = [];
+
+      if (evt.type === 'REQUEST' && evt.item) {
+        const vid = evt.item.videoId || evt.item.video_id;
+        const existing = playerState.queue.find(q => (q.videoId || q.video_id) === vid || q.id === evt.item.id);
+        if (!existing) {
+          playerState.queue.push(evt.item);
+          playerState.upcoming = null;
+          sortUserQueue();
+          renderQueue();
+        }
+      } else if (evt.type === 'UPVOTE') {
+        const target = playerState.queue.find(q => q.id === evt.id || (evt.videoId && (q.videoId || q.video_id) === evt.videoId));
+        if (target) {
+          const mergedVoters = Array.from(new Set([...(target.upvotedBy || []), ...(evt.upvotedBy || []), ...(evt.ldap ? [evt.ldap] : [])]));
+          target.upvotedBy = mergedVoters;
+          target.upvoted_by = mergedVoters;
+          target.upvotes = Math.max(target.upvotes || 1, mergedVoters.length);
+          playerState.upcoming = null;
+          sortUserQueue();
+          renderQueue();
+        }
+      } else if (evt.type === 'REMOVE' || evt.type === 'ADVANCE') {
+        const beforeLen = playerState.queue.length;
+        playerState.queue = playerState.queue.filter(q => q.id !== evt.id && (!evt.videoId || (q.videoId || q.video_id) !== evt.videoId));
+        if (playerState.queue.length !== beforeLen) {
+          playerState.upcoming = null;
+          renderQueue();
+        }
+      }
+    }
+
+    return {
+      publish(payload) {
+        try {
+          const topic = getTopic();
+          fetch(`https://ntfy.sh/${topic}`, {
+            method: 'POST',
+            body: JSON.stringify(Object.assign({}, payload, { ts: Date.now() }))
+          }).catch(() => {});
+        } catch (e) {}
+      },
+      connect() {
+        try {
+          const topic = getTopic();
+          if (evtSource && activeTopic === topic) return;
+          if (evtSource) {
+            try { evtSource.close(); } catch (e) {}
+            evtSource = null;
+          }
+          activeTopic = topic;
+          evtSource = new EventSource(`https://ntfy.sh/${topic}/sse?since=2h`);
+          evtSource.onmessage = function (e) {
+            try {
+              const wrapper = JSON.parse(e.data);
+              if (!wrapper || wrapper.event !== 'message' || !wrapper.message) return;
+              if (wrapper.id && seenEventIds.has(wrapper.id)) return;
+              if (wrapper.id) seenEventIds.add(wrapper.id);
+              const inner = JSON.parse(wrapper.message);
+              applyCloudEvent(inner);
+            } catch (err) {}
+          };
+        } catch (e) {}
+      }
+    };
+  })();
 
   // --- WebSocket Connection ---
 
@@ -5060,6 +5155,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
     fetchState();
     fetchDefaultPlaylist();
     connectWebSocket();
+    FloorCloudSync.connect();
     startProgressTicker();
   }
 
