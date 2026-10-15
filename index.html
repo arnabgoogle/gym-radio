@@ -3070,7 +3070,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
   let ytActivelyPlaying = false;
   let nativeAudioPlaying = false;
   let audioContextActivated = false;
-  let userExplicitState = null; // 'PLAYING' | 'PAUSED' | null
+  let userExplicitState = 'PAUSED'; // Starts PAUSED until user explicitly clicks Play or Phone Audio ON
   let isMuted = false;
   const audioUrlCache = {};
 
@@ -3698,7 +3698,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
 
   // --- Local Phone Audio Stream Toggle ---
 
-  function setLocalAudioMode(enabled, silent = false) {
+  function updateLocalAudioBadgeUI(enabled) {
     localAudioEnabled = enabled;
     localStorage.setItem('gym_radio_local_audio', localAudioEnabled ? 'true' : 'false');
 
@@ -3708,17 +3708,44 @@ input[type="range"]::-webkit-slider-thumb:hover {
         ? 'px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500 text-black shadow-sm'
         : 'px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-400';
     }
+    if (el.heroLocalAudioToggle) {
+      if (localAudioEnabled) {
+        el.heroLocalAudioToggle.classList.add('border-emerald-500/50', 'bg-emerald-500/15', 'text-emerald-300');
+      } else {
+        el.heroLocalAudioToggle.classList.remove('border-emerald-500/50', 'bg-emerald-500/15', 'text-emerald-300');
+      }
+    }
+  }
+
+  function setLocalAudioMode(enabled, silent = false) {
+    updateLocalAudioBadgeUI(enabled);
 
     if (localAudioEnabled) {
-      if (playerState.playbackState === 'PLAYING') {
+      if (!silent) {
+        isMuted = false;
+        playerState.playbackState = 'PLAYING';
+        userExplicitState = 'PLAYING';
+        lastMonotonicTime = performance.now();
+        NativeAudioPlayer.setVolume(playerState.volume || 100);
+        GymAudioEngine.setVolume(playerState.volume || 100);
         NativeAudioPlayer.playTrack(playerState.currentTrack);
         GymAudioEngine.start();
+        updateNowPlayingUI();
+        apiFetch('/api/player/play', { method: 'POST' }).catch(() => {});
+        showToast('Phone Audio ON: Playing on your device', 'success');
       } else {
         NativeAudioPlayer.cueTrack(playerState.currentTrack);
       }
-      if (!silent) showToast('Phone Audio ON: Streaming floor audio to your device', 'success');
     } else {
-      if (!silent) showToast('Phone Audio OFF', 'info');
+      NativeAudioPlayer.pause();
+      GymAudioEngine.stop();
+      if (!silent) {
+        playerState.playbackState = 'PAUSED';
+        userExplicitState = 'PAUSED';
+        updateNowPlayingUI();
+        apiFetch('/api/player/pause', { method: 'POST' }).catch(() => {});
+        showToast('Phone Audio OFF: Device audio stopped', 'info');
+      }
     }
   }
 
@@ -3883,6 +3910,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
     userExplicitState = 'PLAYING';
     lastMonotonicTime = performance.now();
 
+    updateLocalAudioBadgeUI(true);
     NativeAudioPlayer.playTrack(playerState.currentTrack);
     GymAudioEngine.start();
     updateNowPlayingUI();
@@ -4140,6 +4168,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
       playerState.playbackState = 'PLAYING';
       userExplicitState = 'PLAYING';
       lastMonotonicTime = performance.now();
+      updateLocalAudioBadgeUI(true);
       NativeAudioPlayer.playTrack(playerState.currentTrack);
       GymAudioEngine.start();
       updateNowPlayingUI();
@@ -4163,6 +4192,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
     playerState.playbackState = 'PLAYING';
     userExplicitState = 'PLAYING';
     lastMonotonicTime = performance.now();
+    updateLocalAudioBadgeUI(true);
     NativeAudioPlayer.playTrack(playerState.currentTrack);
     GymAudioEngine.start();
     updateNowPlayingUI();
@@ -4181,10 +4211,12 @@ input[type="range"]::-webkit-slider-thumb:hover {
     updateNowPlayingUI();
 
     if (nextState === 'PLAYING') {
+      updateLocalAudioBadgeUI(true);
       NativeAudioPlayer.playTrack(playerState.currentTrack);
       GymAudioEngine.start();
       showToast(`Playing: ${playerState.currentTrack ? playerState.currentTrack.title : 'Gym Radio'}`, 'info');
     } else {
+      updateLocalAudioBadgeUI(false);
       NativeAudioPlayer.pause();
       GymAudioEngine.stop();
       ytActivelyPlaying = false;
@@ -5013,7 +5045,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
     renderLocations();
     setupEventListeners();
     setReceptionistMode(isReceptionistMode, true);
-    setLocalAudioMode(localAudioEnabled, true);
+    setLocalAudioMode(false, true);
 
     // Pre-cue the initial track on the native <audio> element so tapping Play on mobile starts immediately
     NativeAudioPlayer.cueTrack(playerState.currentTrack);
