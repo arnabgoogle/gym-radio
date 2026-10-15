@@ -700,19 +700,22 @@ input[type="range"]::-webkit-slider-thumb:hover {
       </div>
 
       <p class="text-xs text-slate-400 leading-relaxed">
-        Your LDAP identifies your song requests and upvotes on the gym community leaderboard.
+        No login or password needed. Tap your email suggestion on your phone keyboard or type your LDAP once and this phone will remember you automatically.
       </p>
 
       <div class="space-y-2">
-        <label class="text-[11px] font-mono uppercase text-slate-400">Google LDAP</label>
+        <label class="text-[11px] font-mono uppercase text-slate-400">Google LDAP or Email (Auto-strips @google.com)</label>
         <div class="relative">
           <span class="absolute left-3.5 top-3 text-orange-400 font-mono text-sm">@</span>
           <input 
             id="ldap-modal-input" 
-            type="text" 
-            placeholder="username" 
+            type="email" 
+            name="email"
+            autocomplete="email username"
+            inputmode="email"
+            placeholder="username or username@google.com" 
             class="w-full bg-slate-900 text-white pl-8 pr-4 py-2.5 rounded-xl border border-white/15 focus:border-orange-500 focus:outline-none text-sm font-mono"
-            maxlength="32"
+            maxlength="64"
           />
         </div>
       </div>
@@ -3005,6 +3008,34 @@ input[type="range"]::-webkit-slider-thumb:hover {
   }
 
   // --- State Variables ---
+  function normalizeLdapInput(val) {
+    if (!val) return '';
+    let s = String(val).trim().replace(/^@+/, '');
+    if (s.includes('@')) {
+      s = s.split('@')[0];
+    }
+    return s.replace(/[^a-zA-Z0-9._-]/g, '').toLowerCase();
+  }
+
+  // 1. Check URL query/hash for zero-login LDAP auto-bind (?ldap=mondalarnab or #ldap=mondalarnab)
+  try {
+    const urlParams = new URLSearchParams(window.location.search);
+    const hashParams = new URLSearchParams((window.location.hash || '').replace(/^#/, ''));
+    const urlLdap = normalizeLdapInput(urlParams.get('ldap') || urlParams.get('user') || urlParams.get('u') || hashParams.get('ldap'));
+    if (urlLdap) {
+      localStorage.setItem('gym_radio_ldap', urlLdap);
+      localStorage.setItem('gym_radio_ldap_confirmed', 'true');
+      if (window.history && window.history.replaceState) {
+        urlParams.delete('ldap');
+        urlParams.delete('user');
+        urlParams.delete('u');
+        const cleanQuery = urlParams.toString();
+        const cleanUrl = window.location.pathname + (cleanQuery ? `?${cleanQuery}` : '');
+        window.history.replaceState({}, document.title, cleanUrl);
+      }
+    }
+  } catch (e) {}
+
   // Non-blocking athlete handle (defaults to Athlete_XX, no login prompt)
   let currentLdap = localStorage.getItem('gym_radio_ldap');
   if (!currentLdap) {
@@ -3549,7 +3580,8 @@ input[type="range"]::-webkit-slider-thumb:hover {
 
   function openLdapModal() {
     if (!el.ldapModal) return;
-    el.ldapModalInput.value = currentLdap;
+    const isConfirmed = localStorage.getItem('gym_radio_ldap_confirmed') === 'true' || !/^Athlete_\d+$/i.test(currentLdap);
+    el.ldapModalInput.value = isConfirmed ? currentLdap : '';
     el.ldapModal.classList.remove('hidden');
     el.ldapModalInput.focus();
   }
@@ -3558,21 +3590,67 @@ input[type="range"]::-webkit-slider-thumb:hover {
     if (el.ldapModal) el.ldapModal.classList.add('hidden');
   }
 
+  function applyConfirmedLdap(newLdap, showNotification = true) {
+    const prevLdap = currentLdap;
+    currentLdap = newLdap;
+    localStorage.setItem('gym_radio_ldap', currentLdap);
+    localStorage.setItem('gym_radio_ldap_confirmed', 'true');
+    updateLdapUI();
+
+    // Retroactively attribute any requests/upvotes made under the temporary Athlete_XX handle
+    if (prevLdap && prevLdap !== currentLdap && /^Athlete_\d+$/i.test(prevLdap) && Array.isArray(playerState.queue)) {
+      playerState.queue.forEach(item => {
+        if (item.requestedBy === prevLdap) item.requestedBy = currentLdap;
+        if (item.requested_by === prevLdap) item.requested_by = currentLdap;
+        if (Array.isArray(item.upvotedBy)) {
+          item.upvotedBy = Array.from(new Set(item.upvotedBy.map(u => u === prevLdap ? currentLdap : u)));
+        }
+        if (Array.isArray(item.upvoted_by)) {
+          item.upvoted_by = Array.from(new Set(item.upvoted_by.map(u => u === prevLdap ? currentLdap : u)));
+        }
+        FloorCloudSync.publish({ type: 'REQUEST', item });
+      });
+    }
+
+    if (showNotification) {
+      showToast(`LDAP set to @${currentLdap}`, 'success');
+    }
+    renderQueue();
+  }
+
   function saveLdap() {
-    let raw = (el.ldapModalInput.value || '').trim().replace(/^@+/, '');
-    if (!raw) {
-      showToast('Please enter an athlete name', 'error');
+    const cleaned = normalizeLdapInput(el.ldapModalInput.value || '');
+    if (!cleaned) {
+      showToast('Please enter your LDAP or tap your email suggestion', 'error');
       return;
     }
-    raw = raw.replace(/[^a-zA-Z0-9._-]/g, '');
-    if (!raw) raw = 'Athlete';
-
-    currentLdap = raw;
-    localStorage.setItem('gym_radio_ldap', currentLdap);
-    updateLdapUI();
     closeLdapModal();
-    showToast(`Handle updated to @${currentLdap}`, 'success');
-    renderQueue();
+    applyConfirmedLdap(cleaned, true);
+  }
+
+  function silentLdapProbe() {
+    // Listen for background postMessage if embedded or probed
+    window.addEventListener('message', (e) => {
+      if (e.data && e.data.type === 'GYM_LDAP_DETECTED' && e.data.ldap) {
+        const detected = normalizeLdapInput(e.data.ldap);
+        if (detected && /^Athlete_\d+$/i.test(currentLdap)) {
+          applyConfirmedLdap(detected, false);
+        }
+      }
+    });
+
+    // If on direct backend, check /api/whoami silently
+    if (isDirectBackend && /^Athlete_\d+$/i.test(currentLdap)) {
+      apiFetch('/api/whoami')
+        .then(r => r.ok ? r.json() : null)
+        .then(d => {
+          if (d && d.ldap) {
+            const detected = normalizeLdapInput(d.ldap);
+            if (detected) applyConfirmedLdap(detected, false);
+          }
+        })
+        .catch(() => {});
+    }
   }
 
   // --- Gym Location Management ---
@@ -4078,6 +4156,12 @@ input[type="range"]::-webkit-slider-thumb:hover {
 
       showToast(`Requested "${track.title}"! Added to queue.`, 'success');
       switchTab('queue');
+
+      // On first request from a phone with an unconfirmed Athlete_XX handle, open the 1-tap email/LDAP autofill sheet once
+      if (!isDirectBackend && /^Athlete_\d+$/i.test(currentLdap) && localStorage.getItem('gym_radio_ldap_confirmed') !== 'true' && sessionStorage.getItem('gym_radio_ldap_prompted') !== 'true') {
+        sessionStorage.setItem('gym_radio_ldap_prompted', 'true');
+        setTimeout(() => openLdapModal(), 350);
+      }
 
       if (isDirectBackend) {
         const res = await apiFetch('/api/queue', {
@@ -4988,6 +5072,12 @@ input[type="range"]::-webkit-slider-thumb:hover {
       if (e.key === 'Enter') saveLdap();
       if (e.key === 'Escape') closeLdapModal();
     });
+    el.ldapModalInput.addEventListener('input', () => {
+      const val = el.ldapModalInput.value || '';
+      if (val.includes('@')) {
+        el.ldapModalInput.value = normalizeLdapInput(val);
+      }
+    });
 
     // Location Selector & Dropdown
     if (el.locationChipBtn) {
@@ -5136,6 +5226,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
   // --- Application Bootstrap ---
 
   function init() {
+    silentLdapProbe();
     updateLdapUI();
     renderLocations();
     setupEventListeners();
