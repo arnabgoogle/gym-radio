@@ -359,7 +359,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
               RECEPTIONIST DJ CONSOLE
               <span class="px-2 py-0.5 rounded text-[10px] bg-orange-500 text-black font-black uppercase tracking-wider">Audio Host</span>
             </h2>
-            <p class="text-xs text-slate-400">Controls the physical gym speakers via continuous YouTube IFrame playback.</p>
+            <p class="text-xs text-slate-400">Controls the gym floor speakers via direct HTML5 AAC studio audio stream (no video overhead).</p>
           </div>
         </div>
 
@@ -384,13 +384,13 @@ input[type="range"]::-webkit-slider-thumb:hover {
         </div>
       </div>
 
-      <!-- DJ Grid Layout: Visualizer & YouTube Player -->
+      <!-- DJ Grid Layout: Visualizer & Direct Audio Stream Deck -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
         <!-- Visualizer Canvas & Status -->
         <div class="space-y-3">
           <div class="flex items-center justify-between text-xs text-slate-400 font-mono">
             <span>DYNAMIC FREQUENCY VISUALIZER</span>
-            <span id="visualizer-state" class="text-orange-400">ACTIVE</span>
+            <span id="visualizer-state" class="text-orange-400">STANDBY</span>
           </div>
           <div class="h-28 w-full rounded-2xl bg-black/60 border border-white/10 overflow-hidden relative flex items-center justify-center">
             <canvas id="visualizer-canvas" class="w-full h-full"></canvas>
@@ -411,21 +411,27 @@ input[type="range"]::-webkit-slider-thumb:hover {
           </div>
         </div>
 
-        <!-- Embedded YouTube Video Container -->
+        <!-- Direct Studio Audio Stream Deck (No Video Required) -->
         <div class="space-y-1.5">
           <div class="flex items-center justify-between text-xs text-slate-400 font-mono">
-            <span>YOUTUBE AUDIO/VIDEO FEED</span>
-            <span id="player-engine-status" class="text-emerald-400">READY</span>
+            <span>DIRECT STUDIO AUDIO DECK</span>
+            <span id="player-engine-status" class="text-emerald-400 font-bold">DIRECT AUDIO READY</span>
           </div>
-          <div class="relative w-full rounded-2xl overflow-hidden aspect-video bg-black/90 border border-white/10 shadow-xl flex items-center justify-center">
-            <!-- YouTube Iframe API injects here -->
-            <div id="yt-player" class="w-full h-full"></div>
-            <!-- Loading/Placeholder overlay -->
-            <div id="yt-placeholder-overlay" class="absolute inset-0 bg-slate-950 flex flex-col items-center justify-center p-4 text-center">
-              <div class="w-12 h-12 rounded-full border-2 border-orange-500 border-t-transparent animate-spin mb-3"></div>
-              <p class="text-xs font-bold text-slate-300">Initializing YouTube IFrame Stream...</p>
-              <p class="text-[11px] text-slate-500 mt-1">Direct stream for receptionist speaker output</p>
+          <div class="relative w-full rounded-2xl overflow-hidden h-40 bg-gradient-to-br from-slate-950 via-slate-900 to-black border border-white/10 shadow-xl flex items-center justify-center p-4">
+            <div id="yt-player" class="flex items-center gap-4 w-full">
+              <div class="w-20 h-20 rounded-2xl overflow-hidden border border-orange-500/40 shadow-lg flex-shrink-0 bg-slate-900">
+                <img id="dj-deck-thumb" src="https://i.ytimg.com/vi/IPYTxAHeR_o/hqdefault.jpg" alt="Deck Art" class="w-full h-full object-cover" />
+              </div>
+              <div class="min-w-0 flex-1 space-y-1">
+                <div class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-emerald-500/15 border border-emerald-500/30 text-[10px] font-mono font-bold text-emerald-400">
+                  <span>256 KBPS AAC AUDIO STREAM</span>
+                </div>
+                <p id="dj-deck-title" class="text-sm font-extrabold text-white truncate">Animals</p>
+                <p id="dj-deck-artist" class="text-xs text-slate-400 truncate">Martin Garrix</p>
+                <p class="text-[10px] font-mono text-slate-500">Zero-Video Mobile &amp; Speaker Engine</p>
+              </div>
             </div>
+            <div id="yt-placeholder-overlay" class="hidden"></div>
           </div>
         </div>
       </div>
@@ -764,8 +770,8 @@ input[type="range"]::-webkit-slider-thumb:hover {
   <!-- TOAST NOTIFICATION CONTAINER -->
   <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none max-w-sm w-full px-4"></div>
 
-  <!-- YouTube IFrame Player API -->
-  <script src="https://www.youtube.com/iframe_api"></script>
+  <!-- Direct Native HTML5 Audio Element for Mobile & Desktop -->
+  <audio id="gym-native-audio" preload="auto" playsinline class="hidden"></audio>
   <!-- Application Logic -->
   <script>
 /**
@@ -1425,7 +1431,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Phonk",
         "thumbnailUrl": "https://i.ytimg.com/vi/c4e1RB27ba0/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/38/6d/49/386d4954-fe6b-b5e6-15a8-73bf238dac22/mzaf_18021103388920694111.plus.aac.p.m4a"
+        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/9b/7c/37/9b7c3705-45df-6d44-888c-4f94b854c45f/mzaf_5691405409747257187.plus.aac.p.m4a"
     },
     {
         "id": "dSPiDFZmAnQ",
@@ -1480,7 +1486,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Phonk",
         "thumbnailUrl": "https://i.ytimg.com/vi/uwuPS9OnVCA/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/e5/39/23/e539239c-bc2d-6d02-81ee-2645e334747c/mzaf_15169945587325379008.plus.aac.p.m4a"
+        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview122/v4/90/25/78/902578b2-22bf-df42-77ce-65aac3d3c6d4/mzaf_75802184203850582.plus.aac.p.m4a"
     },
     {
         "id": "CZWbgOXGvf4",
@@ -1491,7 +1497,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Phonk",
         "thumbnailUrl": "https://i.ytimg.com/vi/CZWbgOXGvf4/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/66/dc/bd/66dcbd68-b557-bdfd-f2c2-a05491758783/mzaf_13654489760720011690.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "usio8-yDS5c",
@@ -1502,7 +1508,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Phonk",
         "thumbnailUrl": "https://i.ytimg.com/vi/usio8-yDS5c/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/77/06/19/77061943-7598-9d06-d1d4-7fe6e4b89a7c/mzaf_9832849938043881705.plus.aac.p.m4a"
+        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview116/v4/d6/b0/c2/d6b0c20a-436c-049e-ced0-6ecb92465a81/mzaf_12853278418887039792.plus.aac.p.m4a"
     },
     {
         "id": "9OOiVFw_YQ0",
@@ -1513,7 +1519,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Phonk",
         "thumbnailUrl": "https://i.ytimg.com/vi/9OOiVFw_YQ0/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/a7/fe/3c/a7fe3c81-3ebd-ec4e-138a-2a63526ad4b7/mzaf_10186258974205351405.plus.aac.p.m4a"
+        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview116/v4/45/64/1b/45641b88-b58d-9be4-5c33-bbab85d8b20b/mzaf_17836118764768450971.plus.aac.p.m4a"
     },
     {
         "id": "itylRElR4Gw",
@@ -1524,7 +1530,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Phonk",
         "thumbnailUrl": "https://i.ytimg.com/vi/itylRElR4Gw/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/c3/32/f1/c332f138-aa3c-52b8-c414-e85111b58bf5/mzaf_12226515580236242706.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "VXaq77GiyEo",
@@ -1535,7 +1541,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Phonk",
         "thumbnailUrl": "https://i.ytimg.com/vi/VXaq77GiyEo/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/12/82/1a/12821a20-84cc-4699-308e-4e1a1d53f9c9/mzaf_8469442615449881673.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "Bp0LUGMmYXc",
@@ -1546,7 +1552,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Phonk",
         "thumbnailUrl": "https://i.ytimg.com/vi/Bp0LUGMmYXc/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/9a/5d/69/9a5d6917-172a-63da-a911-aaa723ef0b21/mzaf_12979623525508345370.plus.aac.p.m4a"
+        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/ad/bc/78/adbc78f2-8a0c-1157-d09f-12fd0cec1e0b/mzaf_16952381468785594142.plus.aac.p.m4a"
     },
     {
         "id": "7Yw5B3TpX8E",
@@ -1557,7 +1563,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Phonk",
         "thumbnailUrl": "https://i.ytimg.com/vi/7Yw5B3TpX8E/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/df/f2/ac/dff2acfe-46dc-8d62-bd36-da68f90de21b/mzaf_9227845145080011709.plus.aac.p.m4a"
+        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/49/4b/ad/494bad6a-c583-4ec9-2886-68e6085fff69/mzaf_11731004955757403510.plus.aac.p.m4a"
     },
     {
         "id": "UP8x9QbTVno",
@@ -1579,7 +1585,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Phonk",
         "thumbnailUrl": "https://i.ytimg.com/vi/hcMP2raI_xI/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/4e/02/1b/4e021bcf-1f05-413f-d6ea-683822843284/mzaf_11449101934209494893.plus.aac.p.m4a"
+        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/51/57/07/51570796-8d1a-ab4e-55ec-322caf2d05f2/mzaf_9143949228200549067.plus.aac.p.m4a"
     },
     {
         "id": "F89JBfMZG5E",
@@ -1590,7 +1596,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Phonk",
         "thumbnailUrl": "https://i.ytimg.com/vi/F89JBfMZG5E/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/82/cd/17/82cd17d9-6344-b959-5e5a-00b99273678e/mzaf_5400681161236470747.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "OvaL-ElQ8Lc",
@@ -1601,7 +1607,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Phonk",
         "thumbnailUrl": "https://i.ytimg.com/vi/OvaL-ElQ8Lc/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/ab/18/d9/ab18d9e9-01f0-27ea-3a51-6e08585a0072/mzaf_14299744081264843911.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "FRCyHjGLKIw",
@@ -1612,7 +1618,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Phonk",
         "thumbnailUrl": "https://i.ytimg.com/vi/FRCyHjGLKIw/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/7e/eb/d2/7eebd2ee-b257-5e6f-5ae2-3620cdb0eb3b/mzaf_902200490624464022.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "fHGpb1DN5cM",
@@ -1623,7 +1629,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Phonk",
         "thumbnailUrl": "https://i.ytimg.com/vi/fHGpb1DN5cM/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/6e/41/34/6e413453-c797-ef68-1e0a-486b38c3c05f/mzaf_9084720525054845939.plus.aac.p.m4a"
+        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/12/ed/11/12ed1151-1ecf-3c5f-cdca-dd512235d35e/mzaf_8184679279254229829.plus.aac.p.m4a"
     },
     {
         "id": "d6UZVDgUFQA",
@@ -1634,7 +1640,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Phonk",
         "thumbnailUrl": "https://i.ytimg.com/vi/d6UZVDgUFQA/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/9d/48/a7/9d48a72f-98da-4bd6-961b-b4ce7d231bfe/mzaf_3256157696428180951.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "0dT9siTP70Y",
@@ -1645,7 +1651,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Phonk",
         "thumbnailUrl": "https://i.ytimg.com/vi/0dT9siTP70Y/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/47/af/c2/47afc2c5-fe83-9fe9-afc6-c70f7f65f876/mzaf_11741842014384831574.plus.aac.p.m4a"
+        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview126/v4/54/ab/db/54abdbf7-3f92-0f85-152c-d7a12fc94374/mzaf_16873538721173698781.plus.aac.p.m4a"
     },
     {
         "id": "A2VViOMhw1o",
@@ -1656,7 +1662,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Phonk",
         "thumbnailUrl": "https://i.ytimg.com/vi/A2VViOMhw1o/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview116/v4/ca/46/ec/ca46ec1e-a2cf-f5c8-dc10-c4cadc1f213e/mzaf_431628783085840221.plus.aac.p.m4a"
+        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/60/17/dd/6017dde1-5f50-ab53-bd26-f3eea1d799e8/mzaf_12199570077681053136.plus.aac.p.m4a"
     },
     {
         "id": "er416Ad3R1g",
@@ -1667,7 +1673,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Synthwave",
         "thumbnailUrl": "https://i.ytimg.com/vi/er416Ad3R1g/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/fd/c3/7c/fdc37c9f-b0ad-434a-93b9-35ab1f87518a/mzaf_13776257952233740893.plus.aac.p.m4a"
+        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/72/ae/a2/72aea230-30e7-4452-0d87-21ce81bd10f2/mzaf_8745873185334459416.plus.aac.p.m4a"
     },
     {
         "id": "ZVS6Q_lbKQ0",
@@ -1678,7 +1684,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Synthwave",
         "thumbnailUrl": "https://i.ytimg.com/vi/ZVS6Q_lbKQ0/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/ea/0d/66/ea0d6676-fc6c-ec92-2c70-80757bbb6f04/mzaf_3503388881503089278.plus.aac.p.m4a"
+        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/d2/45/fb/d245fbf9-8570-fdc0-5e6b-aa528c130486/mzaf_11947081694159530687.plus.aac.p.m4a"
     },
     {
         "id": "dlW1w6gCWr8",
@@ -1689,7 +1695,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Synthwave",
         "thumbnailUrl": "https://i.ytimg.com/vi/dlW1w6gCWr8/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/39/34/f5/3934f5ed-0269-938c-fc6d-00b9a3f5a324/mzaf_12307121088942514163.plus.aac.p.m4a"
+        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/c9/ec/25/c9ec2554-c6a1-01d1-4cfb-281cf1c98f44/mzaf_5199254239611369795.plus.aac.p.m4a"
     },
     {
         "id": "-nC5TBv3sfU",
@@ -1700,7 +1706,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Synthwave",
         "thumbnailUrl": "https://i.ytimg.com/vi/-nC5TBv3sfU/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/da/59/f4/da59f435-c5c6-a59a-fda4-6a91280ae78e/mzaf_11844129053502098178.plus.aac.p.m4a"
+        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/bd/06/dc/bd06dc70-e2b2-bc99-0947-0d10389a960a/mzaf_16486588803306493542.plus.aac.p.m4a"
     },
     {
         "id": "7WpxyUbltqw",
@@ -1711,7 +1717,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Synthwave",
         "thumbnailUrl": "https://i.ytimg.com/vi/7WpxyUbltqw/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/01/c0/ec/01c0ecc6-36cb-6a62-faf4-e2617cc2e33d/mzaf_11012603604995349193.plus.aac.p.m4a"
+        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/22/dc/dc/22dcdcaa-4d97-1039-446c-24dbc6953684/mzaf_5940623852371193965.plus.aac.p.m4a"
     },
     {
         "id": "RY66fdMt4vc",
@@ -1722,7 +1728,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Synthwave",
         "thumbnailUrl": "https://i.ytimg.com/vi/RY66fdMt4vc/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/27/e2/01/27e2014d-97a7-10db-5817-7dc62d921aca/mzaf_3911250850694510008.plus.aac.p.m4a"
+        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/5f/ea/cd/5feacd10-0852-98ef-6936-895674c29805/mzaf_17591071720542241537.plus.aac.p.m4a"
     },
     {
         "id": "x1NAhlVRaZ4",
@@ -1733,7 +1739,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Synthwave",
         "thumbnailUrl": "https://i.ytimg.com/vi/x1NAhlVRaZ4/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/57/1b/06/571b064c-0a76-da9b-0b77-b30b736fc7d7/mzaf_11150537970329039000.plus.aac.p.m4a"
+        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/bd/11/fb/bd11fb08-8055-beb4-b531-7966abea7e0b/mzaf_7243228870248867450.plus.aac.p.m4a"
     },
     {
         "id": "hugowO0sSrM",
@@ -1744,7 +1750,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Synthwave",
         "thumbnailUrl": "https://i.ytimg.com/vi/hugowO0sSrM/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/6e/e7/c3/6ee7c3b2-af12-71a5-a9fa-cc7bf4857b44/mzaf_9275378630279510726.plus.aac.p.m4a"
+        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/4c/13/2e/4c132e67-abcf-f79b-d935-ef2d43c7102d/mzaf_18156195040929663710.plus.aac.p.m4a"
     },
     {
         "id": "TvZskcqdYcE",
@@ -1755,7 +1761,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Synthwave",
         "thumbnailUrl": "https://i.ytimg.com/vi/TvZskcqdYcE/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/81/e7/74/81e774fd-254a-9f0d-1157-a5696cab2989/mzaf_11311565595383665770.plus.aac.p.m4a"
+        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/a9/a5/61/a9a56117-e2f8-bedb-4691-4f4b666d8e12/mzaf_5875315175946443083.plus.aac.p.m4a"
     },
     {
         "id": "_Ci0Kgdpgsw",
@@ -1766,7 +1772,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Synthwave",
         "thumbnailUrl": "https://i.ytimg.com/vi/_Ci0Kgdpgsw/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/bd/bd/ab/bdbdabe4-edc0-e6e3-caf4-78f49a3000cc/mzaf_5472373794141832670.plus.aac.p.m4a"
+        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/35/ae/63/35ae632c-4784-fb9f-7406-6bf811d940d6/mzaf_877880283455663903.plus.aac.p.m4a"
     },
     {
         "id": "QHNakk1oM7g",
@@ -1777,7 +1783,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Synthwave",
         "thumbnailUrl": "https://i.ytimg.com/vi/QHNakk1oM7g/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/d9/c5/05/d9c505cb-f392-d9bd-98c2-2df82d163ddc/mzaf_16766151440272855896.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "G02wKufX3nw",
@@ -1788,7 +1794,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Synthwave",
         "thumbnailUrl": "https://i.ytimg.com/vi/G02wKufX3nw/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/c2/8a/89/c28a89a6-01ca-3177-5652-265bbbb8fc6a/mzaf_3575570325984240196.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "48WkDxmKYA8",
@@ -1799,7 +1805,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Synthwave",
         "thumbnailUrl": "https://i.ytimg.com/vi/48WkDxmKYA8/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/d2/27/03/d2270301-f111-4be7-3350-af8f6abcc7d3/mzaf_7445251240771454413.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "MkgR0SxmMKo",
@@ -1810,7 +1816,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Synthwave",
         "thumbnailUrl": "https://i.ytimg.com/vi/MkgR0SxmMKo/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview125/v4/4c/2f/23/4c2f23cf-2ba7-58aa-4eff-70d53db0bd2a/mzaf_4338854152088536114.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "BWzV88IjtCs",
@@ -1821,7 +1827,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Synthwave",
         "thumbnailUrl": "https://i.ytimg.com/vi/BWzV88IjtCs/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/b7/87/85/b7878551-b7fc-f402-b724-7361acb25767/mzaf_17266893681384143770.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "rDBbaGCCIhk",
@@ -1832,7 +1838,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Synthwave",
         "thumbnailUrl": "https://i.ytimg.com/vi/rDBbaGCCIhk/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/e5/4f/6c/e54f6c89-d030-710d-845c-1d8d73781cfa/mzaf_6326737089954366445.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "EM4PNxY-tqM",
@@ -1843,7 +1849,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Synthwave",
         "thumbnailUrl": "https://i.ytimg.com/vi/EM4PNxY-tqM/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/c0/5b/37/c05b3702-490f-ac9e-2e0f-e46db4297c55/mzaf_5424514238547620765.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "Ak1-qLbHHCM",
@@ -1854,7 +1860,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Synthwave",
         "thumbnailUrl": "https://i.ytimg.com/vi/Ak1-qLbHHCM/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/0d/88/9b/0d889be3-2872-8c2d-b8a9-811e7cc89b1f/mzaf_17292835540645523636.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "Nqe7jPX6DQY",
@@ -1865,7 +1871,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Synthwave",
         "thumbnailUrl": "https://i.ytimg.com/vi/Nqe7jPX6DQY/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/ba/dd/34/badd34b7-683c-d129-c19c-94b5f16c5b11/mzaf_958122728985592819.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "RMjCxV7u8OA",
@@ -1876,7 +1882,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Synthwave",
         "thumbnailUrl": "https://i.ytimg.com/vi/RMjCxV7u8OA/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/7a/51/85/7a518598-ccb9-df07-5efa-c8dd2125e12b/mzaf_18353167883213501859.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "vQOdthFEK3k",
@@ -1887,7 +1893,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Synthwave",
         "thumbnailUrl": "https://i.ytimg.com/vi/vQOdthFEK3k/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/c2/7d/c9/c27dc9e7-5c23-3cd2-14c6-dc19eee7b608/mzaf_3630104344005591351.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "pzw1fSp4ecU",
@@ -1898,7 +1904,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Synthwave",
         "thumbnailUrl": "https://i.ytimg.com/vi/pzw1fSp4ecU/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/1d/d0/01/1dd00191-cd83-9d2b-764d-1599fa504d2a/mzaf_12963614771450067646.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "HuyioN2YTrM",
@@ -1909,7 +1915,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Synthwave",
         "thumbnailUrl": "https://i.ytimg.com/vi/HuyioN2YTrM/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/c3/00/44/c30044f7-99ed-1ef6-0581-d96bab0a71ae/mzaf_3823426383747757669.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "4AjoU95ofIg",
@@ -1920,7 +1926,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Synthwave",
         "thumbnailUrl": "https://i.ytimg.com/vi/4AjoU95ofIg/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/fd/26/91/fd269110-fd08-d40c-4081-a4da3a807cff/mzaf_16406598812163933939.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "3ODOpPkm79k",
@@ -1931,7 +1937,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Synthwave",
         "thumbnailUrl": "https://i.ytimg.com/vi/3ODOpPkm79k/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/9f/2e/9c/9f2e9c57-8666-53a8-6d62-e5647c702e95/mzaf_81861469305734864.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "UbBqF8xxh48",
@@ -1942,7 +1948,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Synthwave",
         "thumbnailUrl": "https://i.ytimg.com/vi/UbBqF8xxh48/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/57/40/3e/57403ed5-a794-efcd-e514-cece8272f95c/mzaf_7648200532295140009.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "Z7Z3KZTeWVE",
@@ -1953,7 +1959,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Synthwave",
         "thumbnailUrl": "https://i.ytimg.com/vi/Z7Z3KZTeWVE/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/8b/a1/ac/8ba1ac8e-aa48-497f-0728-2afdc10f9b22/mzaf_9601556214281911515.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "EAYfJckSEN0",
@@ -1964,7 +1970,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Synthwave",
         "thumbnailUrl": "https://i.ytimg.com/vi/EAYfJckSEN0/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/a9/62/37/a9623748-8068-5016-6ee8-7e18ec23e9f6/mzaf_4883073172019809194.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "UiSB2Fbw9gs",
@@ -1975,7 +1981,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Synthwave",
         "thumbnailUrl": "https://i.ytimg.com/vi/UiSB2Fbw9gs/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/d2/5e/58/d25e5802-25f7-bd23-109e-5fd9a2ac5d1d/mzaf_3262384288922300118.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "vR3_8Qypmfs",
@@ -1986,7 +1992,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Synthwave",
         "thumbnailUrl": "https://i.ytimg.com/vi/vR3_8Qypmfs/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview122/v4/84/fd/c3/84fdc349-0f0a-3892-30e3-09dde857ef4d/mzaf_16613799983418381140.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "oxzQsfEuRDo",
@@ -1997,7 +2003,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Pop",
         "thumbnailUrl": "https://i.ytimg.com/vi/oxzQsfEuRDo/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview112/v4/5a/e7/a7/5ae7a76f-7460-bb18-bfab-02bb6c90020b/mzaf_15685735625886950974.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "9HDEHj2yzew",
@@ -2008,7 +2014,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Pop",
         "thumbnailUrl": "https://i.ytimg.com/vi/9HDEHj2yzew/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview116/v4/72/d7/cf/72d7cf49-6432-5eda-57de-dc9c73c3b9e7/mzaf_794322640315133383.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "TUVcZfQe-Kw",
@@ -2019,7 +2025,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Pop",
         "thumbnailUrl": "https://i.ytimg.com/vi/TUVcZfQe-Kw/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview116/v4/c0/50/bb/c050bb4d-0d7c-06c4-3c8e-d439a534f738/mzaf_1687715542534728560.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "SMRVFIrPevA",
@@ -2030,7 +2036,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Pop",
         "thumbnailUrl": "https://i.ytimg.com/vi/SMRVFIrPevA/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/48/71/f7/4871f7ab-ba1e-ece1-e522-614846e89018/mzaf_4920942197958516677.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "pGgZz_Grt20",
@@ -2041,7 +2047,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Pop",
         "thumbnailUrl": "https://i.ytimg.com/vi/pGgZz_Grt20/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/85/67/4b/85674b08-ce05-e486-0a25-a1ce0d6e2a23/mzaf_73250633512901837.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "13weRdul1DA",
@@ -2052,7 +2058,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Pop",
         "thumbnailUrl": "https://i.ytimg.com/vi/13weRdul1DA/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/bd/b8/28/bdb828dd-850d-cc23-d505-eb732924a31d/mzaf_11930869156490308194.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "6MXPCQt1eEA",
@@ -2063,7 +2069,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Pop",
         "thumbnailUrl": "https://i.ytimg.com/vi/6MXPCQt1eEA/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/4b/31/a4/4b31a465-292f-4e79-764e-8ca4afbb4a28/mzaf_1717045715590637662.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "RvYcatJB3NU",
@@ -2074,7 +2080,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Pop",
         "thumbnailUrl": "https://i.ytimg.com/vi/RvYcatJB3NU/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/0f/d4/2d/0fd42d22-1308-4f5e-52e1-8543dbc7ecf0/mzaf_7884730130874724706.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "Jao4uCs5jOo",
@@ -2085,7 +2091,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Pop",
         "thumbnailUrl": "https://i.ytimg.com/vi/Jao4uCs5jOo/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/5e/63/6b/5e636b35-da25-d278-5f00-1c5e6f8c876e/mzaf_13283894404856903212.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "UqyT8IEBkvY",
@@ -2096,7 +2102,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Pop",
         "thumbnailUrl": "https://i.ytimg.com/vi/UqyT8IEBkvY/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/d8/99/34/d8993409-d9c7-335d-4c4d-cd19a8f84fe5/mzaf_1778883915694454214.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "BCYDWn2cPfI",
@@ -2107,7 +2113,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Pop",
         "thumbnailUrl": "https://i.ytimg.com/vi/BCYDWn2cPfI/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/38/6d/49/386d4954-fe6b-b5e6-15a8-73bf238dac22/mzaf_18021103388920694111.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "s4HExm9g8RE",
@@ -2118,7 +2124,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Pop",
         "thumbnailUrl": "https://i.ytimg.com/vi/s4HExm9g8RE/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/f6/28/79/f628797a-1fb6-e14d-62b4-a4103932dd84/mzaf_15426824703700481110.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "Ct-HDVIp6yQ",
@@ -2129,7 +2135,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Pop",
         "thumbnailUrl": "https://i.ytimg.com/vi/Ct-HDVIp6yQ/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/66/10/c2/6610c294-f9a1-0ea7-a8c6-5210e364b187/mzaf_4478554083836545143.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "o-_Sf1LUrbs",
@@ -2140,7 +2146,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Pop",
         "thumbnailUrl": "https://i.ytimg.com/vi/o-_Sf1LUrbs/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/4e/21/08/4e210899-7154-f491-ed31-426784bb54d2/mzaf_1807394955855439771.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "ygSRD6XnmDA",
@@ -2151,7 +2157,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Pop",
         "thumbnailUrl": "https://i.ytimg.com/vi/ygSRD6XnmDA/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/e5/39/23/e539239c-bc2d-6d02-81ee-2645e334747c/mzaf_15169945587325379008.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "8qwNyRDl-UY",
@@ -2162,7 +2168,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Pop",
         "thumbnailUrl": "https://i.ytimg.com/vi/8qwNyRDl-UY/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/ef/b4/24/efb42416-300c-f9a8-85c7-34bd24710543/mzaf_8780515269055215992.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "yL7IRngzIdk",
@@ -2173,7 +2179,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Pop",
         "thumbnailUrl": "https://i.ytimg.com/vi/yL7IRngzIdk/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/8f/ca/53/8fca53bf-328f-4006-fb9c-eef2feee7790/mzaf_17242236602085711440.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "X9jc0yrDknc",
@@ -2184,7 +2190,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Pop",
         "thumbnailUrl": "https://i.ytimg.com/vi/X9jc0yrDknc/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/66/dc/bd/66dcbd68-b557-bdfd-f2c2-a05491758783/mzaf_13654489760720011690.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "7OJZAmRFWEk",
@@ -2195,7 +2201,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Pop",
         "thumbnailUrl": "https://i.ytimg.com/vi/7OJZAmRFWEk/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/77/06/19/77061943-7598-9d06-d1d4-7fe6e4b89a7c/mzaf_9832849938043881705.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "WXBHCQYxwr0",
@@ -2206,7 +2212,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Pop",
         "thumbnailUrl": "https://i.ytimg.com/vi/WXBHCQYxwr0/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/a7/fe/3c/a7fe3c81-3ebd-ec4e-138a-2a63526ad4b7/mzaf_10186258974205351405.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "iB9Wt3dJCmA",
@@ -2217,7 +2223,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Pop",
         "thumbnailUrl": "https://i.ytimg.com/vi/iB9Wt3dJCmA/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/c3/32/f1/c332f138-aa3c-52b8-c414-e85111b58bf5/mzaf_12226515580236242706.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "siqC-F1VFAE",
@@ -2228,7 +2234,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Pop",
         "thumbnailUrl": "https://i.ytimg.com/vi/siqC-F1VFAE/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/12/82/1a/12821a20-84cc-4699-308e-4e1a1d53f9c9/mzaf_8469442615449881673.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "yTDlqDTuaVs",
@@ -2239,7 +2245,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Pop",
         "thumbnailUrl": "https://i.ytimg.com/vi/yTDlqDTuaVs/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/9a/5d/69/9a5d6917-172a-63da-a911-aaa723ef0b21/mzaf_12979623525508345370.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "lEsPhTbJhuo",
@@ -2250,7 +2256,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Pop",
         "thumbnailUrl": "https://i.ytimg.com/vi/lEsPhTbJhuo/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/df/f2/ac/dff2acfe-46dc-8d62-bd36-da68f90de21b/mzaf_9227845145080011709.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "-UdCXsqfKnU",
@@ -2261,7 +2267,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Pop",
         "thumbnailUrl": "https://i.ytimg.com/vi/-UdCXsqfKnU/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/5e/73/3e/5e733e6a-ddae-6081-dbbd-0be7e9542e60/mzaf_15726405558792372151.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "8uDQ0P9AWc8",
@@ -2272,7 +2278,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Pop",
         "thumbnailUrl": "https://i.ytimg.com/vi/8uDQ0P9AWc8/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/4e/02/1b/4e021bcf-1f05-413f-d6ea-683822843284/mzaf_11449101934209494893.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "xo0bpPbiUlM",
@@ -2283,7 +2289,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Pop",
         "thumbnailUrl": "https://i.ytimg.com/vi/xo0bpPbiUlM/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/82/cd/17/82cd17d9-6344-b959-5e5a-00b99273678e/mzaf_5400681161236470747.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "0X4XGrK_PwM",
@@ -2294,7 +2300,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Pop",
         "thumbnailUrl": "https://i.ytimg.com/vi/0X4XGrK_PwM/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/ab/18/d9/ab18d9e9-01f0-27ea-3a51-6e08585a0072/mzaf_14299744081264843911.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "aatr_2MstrI",
@@ -2305,7 +2311,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Pop",
         "thumbnailUrl": "https://i.ytimg.com/vi/aatr_2MstrI/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/7e/eb/d2/7eebd2ee-b257-5e6f-5ae2-3620cdb0eb3b/mzaf_902200490624464022.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "cOsK7SY2kLU",
@@ -2316,7 +2322,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Pop",
         "thumbnailUrl": "https://i.ytimg.com/vi/cOsK7SY2kLU/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/6e/41/34/6e413453-c797-ef68-1e0a-486b38c3c05f/mzaf_9084720525054845939.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "JRfuAukYTKg",
@@ -2327,7 +2333,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Pop",
         "thumbnailUrl": "https://i.ytimg.com/vi/JRfuAukYTKg/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/9d/48/a7/9d48a72f-98da-4bd6-961b-b4ce7d231bfe/mzaf_3256157696428180951.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "yXO6UPOhwC0",
@@ -2338,7 +2344,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Pop",
         "thumbnailUrl": "https://i.ytimg.com/vi/yXO6UPOhwC0/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/47/af/c2/47afc2c5-fe83-9fe9-afc6-c70f7f65f876/mzaf_11741842014384831574.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "3OnnDqH6Wj8",
@@ -2349,7 +2355,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Pop",
         "thumbnailUrl": "https://i.ytimg.com/vi/3OnnDqH6Wj8/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview116/v4/ca/46/ec/ca46ec1e-a2cf-f5c8-dc10-c4cadc1f213e/mzaf_431628783085840221.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "nfWlot6h_JM",
@@ -2360,7 +2366,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Pop",
         "thumbnailUrl": "https://i.ytimg.com/vi/nfWlot6h_JM/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/fd/c3/7c/fdc37c9f-b0ad-434a-93b9-35ab1f87518a/mzaf_13776257952233740893.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "ee_20vJ_FCQ",
@@ -2371,7 +2377,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Pop",
         "thumbnailUrl": "https://i.ytimg.com/vi/ee_20vJ_FCQ/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/ea/0d/66/ea0d6676-fc6c-ec92-2c70-80757bbb6f04/mzaf_3503388881503089278.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "eVTXPUF4Oz4",
@@ -2382,7 +2388,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Rock",
         "thumbnailUrl": "https://i.ytimg.com/vi/eVTXPUF4Oz4/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/39/34/f5/3934f5ed-0269-938c-fc6d-00b9a3f5a324/mzaf_12307121088942514163.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "kXYiU_JCYtU",
@@ -2393,7 +2399,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Rock",
         "thumbnailUrl": "https://i.ytimg.com/vi/kXYiU_JCYtU/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/da/59/f4/da59f435-c5c6-a59a-fda4-6a91280ae78e/mzaf_11844129053502098178.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "s5peaiv2qXc",
@@ -2404,7 +2410,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Rock",
         "thumbnailUrl": "https://i.ytimg.com/vi/s5peaiv2qXc/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/01/c0/ec/01c0ecc6-36cb-6a62-faf4-e2617cc2e33d/mzaf_11012603604995349193.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "vDm5b8zufp4",
@@ -2415,7 +2421,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Rock",
         "thumbnailUrl": "https://i.ytimg.com/vi/vDm5b8zufp4/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/27/e2/01/27e2014d-97a7-10db-5817-7dc62d921aca/mzaf_3911250850694510008.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "rgCBIYNBFB4",
@@ -2426,7 +2432,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Rock",
         "thumbnailUrl": "https://i.ytimg.com/vi/rgCBIYNBFB4/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/57/1b/06/571b064c-0a76-da9b-0b77-b30b736fc7d7/mzaf_11150537970329039000.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "1mjlM_RnsVE",
@@ -2437,7 +2443,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Rock",
         "thumbnailUrl": "https://i.ytimg.com/vi/1mjlM_RnsVE/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/6e/e7/c3/6ee7c3b2-af12-71a5-a9fa-cc7bf4857b44/mzaf_9275378630279510726.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "uGcsIdGOuZY",
@@ -2448,7 +2454,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Rock",
         "thumbnailUrl": "https://i.ytimg.com/vi/uGcsIdGOuZY/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/81/e7/74/81e774fd-254a-9f0d-1157-a5696cab2989/mzaf_11311565595383665770.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "eEUxJMPxLIo",
@@ -2459,7 +2465,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Rock",
         "thumbnailUrl": "https://i.ytimg.com/vi/eEUxJMPxLIo/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/bd/bd/ab/bdbdabe4-edc0-e6e3-caf4-78f49a3000cc/mzaf_5472373794141832670.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "t-eu6QGFgas",
@@ -2470,7 +2476,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Rock",
         "thumbnailUrl": "https://i.ytimg.com/vi/t-eu6QGFgas/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/d9/c5/05/d9c505cb-f392-d9bd-98c2-2df82d163ddc/mzaf_16766151440272855896.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "kZGNSAFCbbE",
@@ -2481,7 +2487,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Rock",
         "thumbnailUrl": "https://i.ytimg.com/vi/kZGNSAFCbbE/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/c2/8a/89/c28a89a6-01ca-3177-5652-265bbbb8fc6a/mzaf_3575570325984240196.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "AyTtAMoEc0U",
@@ -2492,7 +2498,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Rock",
         "thumbnailUrl": "https://i.ytimg.com/vi/AyTtAMoEc0U/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/d2/27/03/d2270301-f111-4be7-3350-af8f6abcc7d3/mzaf_7445251240771454413.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "jhgVu2lsi_k",
@@ -2503,7 +2509,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Rock",
         "thumbnailUrl": "https://i.ytimg.com/vi/jhgVu2lsi_k/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview125/v4/4c/2f/23/4c2f23cf-2ba7-58aa-4eff-70d53db0bd2a/mzaf_4338854152088536114.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "6enZdk9LTqs",
@@ -2514,7 +2520,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Rock",
         "thumbnailUrl": "https://i.ytimg.com/vi/6enZdk9LTqs/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/b7/87/85/b7878551-b7fc-f402-b724-7361acb25767/mzaf_17266893681384143770.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "jaf0seJUsG4",
@@ -2525,7 +2531,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Rock",
         "thumbnailUrl": "https://i.ytimg.com/vi/jaf0seJUsG4/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/e5/4f/6c/e54f6c89-d030-710d-845c-1d8d73781cfa/mzaf_6326737089954366445.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "asZsqhSBJZ8",
@@ -2536,7 +2542,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Rock",
         "thumbnailUrl": "https://i.ytimg.com/vi/asZsqhSBJZ8/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/c0/5b/37/c05b3702-490f-ac9e-2e0f-e46db4297c55/mzaf_5424514238547620765.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "HgzGwKwLmgM",
@@ -2547,7 +2553,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Rock",
         "thumbnailUrl": "https://i.ytimg.com/vi/HgzGwKwLmgM/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/0d/88/9b/0d889be3-2872-8c2d-b8a9-811e7cc89b1f/mzaf_17292835540645523636.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "w8KQmps-Sog",
@@ -2558,7 +2564,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Rock",
         "thumbnailUrl": "https://i.ytimg.com/vi/w8KQmps-Sog/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/ba/dd/34/badd34b7-683c-d129-c19c-94b5f16c5b11/mzaf_958122728985592819.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "3dm_5qWWDV8",
@@ -2569,7 +2575,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Rock",
         "thumbnailUrl": "https://i.ytimg.com/vi/3dm_5qWWDV8/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/7a/51/85/7a518598-ccb9-df07-5efa-c8dd2125e12b/mzaf_18353167883213501859.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "0J2QdDbelmY",
@@ -2580,7 +2586,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Rock",
         "thumbnailUrl": "https://i.ytimg.com/vi/0J2QdDbelmY/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/c2/7d/c9/c27dc9e7-5c23-3cd2-14c6-dc19eee7b608/mzaf_3630104344005591351.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "zIbnnTi90Tw",
@@ -2591,7 +2597,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Rock",
         "thumbnailUrl": "https://i.ytimg.com/vi/zIbnnTi90Tw/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/1d/d0/01/1dd00191-cd83-9d2b-764d-1599fa504d2a/mzaf_12963614771450067646.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "plOpnfJDG-c",
@@ -2602,7 +2608,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Rock",
         "thumbnailUrl": "https://i.ytimg.com/vi/plOpnfJDG-c/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/c3/00/44/c30044f7-99ed-1ef6-0581-d96bab0a71ae/mzaf_3823426383747757669.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "H5hTRY2HtIo",
@@ -2613,7 +2619,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Rock",
         "thumbnailUrl": "https://i.ytimg.com/vi/H5hTRY2HtIo/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/fd/26/91/fd269110-fd08-d40c-4081-a4da3a807cff/mzaf_16406598812163933939.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "KRS4GQZfRuw",
@@ -2624,7 +2630,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Rock",
         "thumbnailUrl": "https://i.ytimg.com/vi/KRS4GQZfRuw/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/9f/2e/9c/9f2e9c57-8666-53a8-6d62-e5647c702e95/mzaf_81861469305734864.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "9itwt_opsvQ",
@@ -2635,7 +2641,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Rock",
         "thumbnailUrl": "https://i.ytimg.com/vi/9itwt_opsvQ/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/57/40/3e/57403ed5-a794-efcd-e514-cece8272f95c/mzaf_7648200532295140009.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "k2M0NMsevSU",
@@ -2646,7 +2652,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Rock",
         "thumbnailUrl": "https://i.ytimg.com/vi/k2M0NMsevSU/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/8b/a1/ac/8ba1ac8e-aa48-497f-0728-2afdc10f9b22/mzaf_9601556214281911515.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "pXMEXCT5ohY",
@@ -2657,7 +2663,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Rock",
         "thumbnailUrl": "https://i.ytimg.com/vi/pXMEXCT5ohY/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/a9/62/37/a9623748-8068-5016-6ee8-7e18ec23e9f6/mzaf_4883073172019809194.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "yVLRhZiZ5Wc",
@@ -2668,7 +2674,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Rock",
         "thumbnailUrl": "https://i.ytimg.com/vi/yVLRhZiZ5Wc/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/d2/5e/58/d25e5802-25f7-bd23-109e-5fd9a2ac5d1d/mzaf_3262384288922300118.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "lMGaiSqOp58",
@@ -2679,7 +2685,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Rock",
         "thumbnailUrl": "https://i.ytimg.com/vi/lMGaiSqOp58/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview122/v4/84/fd/c3/84fdc349-0f0a-3892-30e3-09dde857ef4d/mzaf_16613799983418381140.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "7-VbIKSA3DI",
@@ -2690,7 +2696,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Rock",
         "thumbnailUrl": "https://i.ytimg.com/vi/7-VbIKSA3DI/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview112/v4/5a/e7/a7/5ae7a76f-7460-bb18-bfab-02bb6c90020b/mzaf_15685735625886950974.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "vU359Aqv8UY",
@@ -2701,7 +2707,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Rock",
         "thumbnailUrl": "https://i.ytimg.com/vi/vU359Aqv8UY/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview116/v4/72/d7/cf/72d7cf49-6432-5eda-57de-dc9c73c3b9e7/mzaf_794322640315133383.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "VDvr08sCPOc",
@@ -2712,7 +2718,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Hip-Hop",
         "thumbnailUrl": "https://i.ytimg.com/vi/VDvr08sCPOc/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview116/v4/c0/50/bb/c050bb4d-0d7c-06c4-3c8e-d439a534f738/mzaf_1687715542534728560.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "uftlL3KvCXE",
@@ -2723,7 +2729,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Hip-Hop",
         "thumbnailUrl": "https://i.ytimg.com/vi/uftlL3KvCXE/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/48/71/f7/4871f7ab-ba1e-ece1-e522-614846e89018/mzaf_4920942197958516677.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "p0llPWr6FO0",
@@ -2734,7 +2740,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Hip-Hop",
         "thumbnailUrl": "https://i.ytimg.com/vi/p0llPWr6FO0/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/85/67/4b/85674b08-ce05-e486-0a25-a1ce0d6e2a23/mzaf_73250633512901837.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "H7jenEN4vwA",
@@ -2745,7 +2751,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Hip-Hop",
         "thumbnailUrl": "https://i.ytimg.com/vi/H7jenEN4vwA/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/bd/b8/28/bdb828dd-850d-cc23-d505-eb732924a31d/mzaf_11930869156490308194.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "nLlKenDY8L0",
@@ -2756,7 +2762,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Hip-Hop",
         "thumbnailUrl": "https://i.ytimg.com/vi/nLlKenDY8L0/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/4b/31/a4/4b31a465-292f-4e79-764e-8ca4afbb4a28/mzaf_1717045715590637662.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "89qrKvoriuU",
@@ -2767,7 +2773,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Hip-Hop",
         "thumbnailUrl": "https://i.ytimg.com/vi/89qrKvoriuU/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/0f/d4/2d/0fd42d22-1308-4f5e-52e1-8543dbc7ecf0/mzaf_7884730130874724706.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "JYbqzC4aBnY",
@@ -2778,7 +2784,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Hip-Hop",
         "thumbnailUrl": "https://i.ytimg.com/vi/JYbqzC4aBnY/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/5e/63/6b/5e636b35-da25-d278-5f00-1c5e6f8c876e/mzaf_13283894404856903212.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "Da0SBaz7Bi0",
@@ -2789,7 +2795,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Hip-Hop",
         "thumbnailUrl": "https://i.ytimg.com/vi/Da0SBaz7Bi0/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/d8/99/34/d8993409-d9c7-335d-4c4d-cd19a8f84fe5/mzaf_1778883915694454214.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "k9-qPrOE_VM",
@@ -2800,7 +2806,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Hip-Hop",
         "thumbnailUrl": "https://i.ytimg.com/vi/k9-qPrOE_VM/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/38/6d/49/386d4954-fe6b-b5e6-15a8-73bf238dac22/mzaf_18021103388920694111.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "pfdJbmFJDDI",
@@ -2811,7 +2817,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Hip-Hop",
         "thumbnailUrl": "https://i.ytimg.com/vi/pfdJbmFJDDI/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/f6/28/79/f628797a-1fb6-e14d-62b4-a4103932dd84/mzaf_15426824703700481110.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "2zNSgSzhBfM",
@@ -2822,7 +2828,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Hip-Hop",
         "thumbnailUrl": "https://i.ytimg.com/vi/2zNSgSzhBfM/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/66/10/c2/6610c294-f9a1-0ea7-a8c6-5210e364b187/mzaf_4478554083836545143.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "fIHH37IujQE",
@@ -2833,7 +2839,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Hip-Hop",
         "thumbnailUrl": "https://i.ytimg.com/vi/fIHH37IujQE/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/4e/21/08/4e210899-7154-f491-ed31-426784bb54d2/mzaf_1807394955855439771.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "Ih8I88-CzZw",
@@ -2844,7 +2850,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Hip-Hop",
         "thumbnailUrl": "https://i.ytimg.com/vi/Ih8I88-CzZw/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/e5/39/23/e539239c-bc2d-6d02-81ee-2645e334747c/mzaf_15169945587325379008.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "d6WiBXd3xfI",
@@ -2855,7 +2861,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Hip-Hop",
         "thumbnailUrl": "https://i.ytimg.com/vi/d6WiBXd3xfI/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/ef/b4/24/efb42416-300c-f9a8-85c7-34bd24710543/mzaf_8780515269055215992.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "033R7zwiHDw",
@@ -2866,7 +2872,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Hip-Hop",
         "thumbnailUrl": "https://i.ytimg.com/vi/033R7zwiHDw/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/8f/ca/53/8fca53bf-328f-4006-fb9c-eef2feee7790/mzaf_17242236602085711440.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "RJEN0u9bxVM",
@@ -2877,7 +2883,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Hip-Hop",
         "thumbnailUrl": "https://i.ytimg.com/vi/RJEN0u9bxVM/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/66/dc/bd/66dcbd68-b557-bdfd-f2c2-a05491758783/mzaf_13654489760720011690.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "WpnChRZ79Zk",
@@ -2888,7 +2894,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Hip-Hop",
         "thumbnailUrl": "https://i.ytimg.com/vi/WpnChRZ79Zk/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/77/06/19/77061943-7598-9d06-d1d4-7fe6e4b89a7c/mzaf_9832849938043881705.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "M4XKNXMMvi4",
@@ -2899,7 +2905,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Hip-Hop",
         "thumbnailUrl": "https://i.ytimg.com/vi/M4XKNXMMvi4/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/a7/fe/3c/a7fe3c81-3ebd-ec4e-138a-2a63526ad4b7/mzaf_10186258974205351405.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "imTqD_E5bmI",
@@ -2910,7 +2916,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Hip-Hop",
         "thumbnailUrl": "https://i.ytimg.com/vi/imTqD_E5bmI/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/c3/32/f1/c332f138-aa3c-52b8-c414-e85111b58bf5/mzaf_12226515580236242706.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "GoCOg8ZzUfg",
@@ -2921,7 +2927,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Hip-Hop",
         "thumbnailUrl": "https://i.ytimg.com/vi/GoCOg8ZzUfg/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/12/82/1a/12821a20-84cc-4699-308e-4e1a1d53f9c9/mzaf_8469442615449881673.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "nx9YBgROtQU",
@@ -2932,7 +2938,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Hip-Hop",
         "thumbnailUrl": "https://i.ytimg.com/vi/nx9YBgROtQU/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/9a/5d/69/9a5d6917-172a-63da-a911-aaa723ef0b21/mzaf_12979623525508345370.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "eSB_5jDgVDk",
@@ -2943,7 +2949,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Hip-Hop",
         "thumbnailUrl": "https://i.ytimg.com/vi/eSB_5jDgVDk/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/df/f2/ac/dff2acfe-46dc-8d62-bd36-da68f90de21b/mzaf_9227845145080011709.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "Rmp6zIr5y4U",
@@ -2954,7 +2960,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Hip-Hop",
         "thumbnailUrl": "https://i.ytimg.com/vi/Rmp6zIr5y4U/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/5e/73/3e/5e733e6a-ddae-6081-dbbd-0be7e9542e60/mzaf_15726405558792372151.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "j-1rhtVj8_0",
@@ -2965,7 +2971,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Hip-Hop",
         "thumbnailUrl": "https://i.ytimg.com/vi/j-1rhtVj8_0/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/4e/02/1b/4e021bcf-1f05-413f-d6ea-683822843284/mzaf_11449101934209494893.plus.aac.p.m4a"
+        "audioUrl": null
     },
     {
         "id": "jrL_LzX5wv4",
@@ -2976,20 +2982,27 @@ input[type="range"]::-webkit-slider-thumb:hover {
         "genre": "Hip-Hop",
         "thumbnailUrl": "https://i.ytimg.com/vi/jrL_LzX5wv4/hqdefault.jpg",
         "isExplicit": false,
-        "audioUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/82/cd/17/82cd17d9-6344-b959-5e5a-00b99273678e/mzaf_5400681161236470747.plus.aac.p.m4a"
+        "audioUrl": null
     }
 ];
 
-  // Host detection for direct server vs mirror deployments
-  const isMirrorHost = (location.hostname.includes('github.io') ||
-                        location.hostname.includes('google.com') ||
-                        location.hostname.includes('googleplex.com')) &&
-                       !location.hostname.includes('paradox14') &&
-                       !location.hostname.includes('localhost') &&
-                       location.hostname !== '127.0.0.1';
+  // Host detection for direct server vs mirror/mobile deployments (prevents HTTPS Mixed Content errors)
+  const isDirectBackend = (
+    location.protocol !== 'file:' &&
+    (location.hostname === 'localhost' ||
+     location.hostname === '127.0.0.1' ||
+     location.hostname.includes('paradox14'))
+  );
 
-  const API_BASE = isMirrorHost ? 'http://paradox14.c.googlers.com:8095' : '';
-  const WS_BASE = isMirrorHost ? 'ws://paradox14.c.googlers.com:8095/ws' : `${location.protocol === 'https:' ? 'wss:' : 'ws:'}//${location.host}/ws`;
+  const API_BASE = '';
+  const WS_BASE = isDirectBackend ? `${location.protocol === 'https:' ? 'wss:' : 'ws:'}//${location.host}/ws` : null;
+
+  function apiFetch(path, options) {
+    if (!isDirectBackend) {
+      return Promise.resolve({ ok: false, status: 0, json: () => Promise.resolve({}) });
+    }
+    return fetch(`${API_BASE}${path}`, options);
+  }
 
   // --- State Variables ---
   // Non-blocking athlete handle (defaults to Athlete_XX, no login prompt)
@@ -3063,10 +3076,17 @@ input[type="range"]::-webkit-slider-thumb:hover {
 
   // --- Pure HTML5 <audio> Direct Stream Player (Works on Mobile Phones Without Video/Iframe) ---
   const NativeAudioPlayer = (function () {
-    const audio = new Audio();
+    let audio = document.getElementById('gym-native-audio');
+    if (!audio) {
+      audio = document.createElement('audio');
+      audio.id = 'gym-native-audio';
+      audio.className = 'hidden';
+      if (document.body) document.body.appendChild(audio);
+    }
     audio.preload = 'auto';
     audio.playsInline = true;
-    audio.loop = true;
+    audio.loop = false;
+    window._nativeAudio = audio;
     let currentLoadedVid = null;
 
     audio.addEventListener('playing', () => {
@@ -3087,6 +3107,13 @@ input[type="range"]::-webkit-slider-thumb:hover {
       nativeAudioPlaying = false;
     });
 
+    audio.addEventListener('ended', () => {
+      nativeAudioPlaying = false;
+      if (playerState.playbackState === 'PLAYING') {
+        autoAdvanceNextTrack();
+      }
+    });
+
     audio.addEventListener('error', () => {
       nativeAudioPlaying = false;
     });
@@ -3104,6 +3131,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
       const builtin = BUILTIN_DEFAULT_TRACKS.find(t => t.videoId === vid || (t.title === track.title && t.artist === track.artist));
       if (builtin && builtin.audioUrl) {
         audioUrlCache[vid] = builtin.audioUrl;
+        track.audioUrl = builtin.audioUrl;
         return builtin.audioUrl;
       }
 
@@ -3125,10 +3153,10 @@ input[type="range"]::-webkit-slider-thumb:hover {
         }
       } catch (e) {}
 
-      // Also check backend yt-dlp audio resolver if reachable
-      if (vid) {
+      // Also check backend yt-dlp audio resolver if on direct server
+      if (vid && isDirectBackend) {
         try {
-          const res = await fetch(`${API_BASE}/api/audio/${encodeURIComponent(vid)}?title=${encodeURIComponent(track.title || '')}&artist=${encodeURIComponent(track.artist || '')}&format_json=true`);
+          const res = await apiFetch(`/api/audio/${encodeURIComponent(vid)}?title=${encodeURIComponent(track.title || '')}&artist=${encodeURIComponent(track.artist || '')}&format_json=true`);
           if (res.ok) {
             const data = await res.json();
             if (data && data.audioUrl) {
@@ -3140,10 +3168,34 @@ input[type="range"]::-webkit-slider-thumb:hover {
         } catch (e) {}
       }
 
-      return BUILTIN_DEFAULT_TRACKS[0] && BUILTIN_DEFAULT_TRACKS[0].audioUrl ? BUILTIN_DEFAULT_TRACKS[0].audioUrl : null;
+      return null;
     }
 
     return {
+      async cueTrack(track) {
+        if (!track) return;
+        const vid = track.videoId || track.video_id || track.title;
+        const immediateUrl = track.audioUrl || audioUrlCache[vid] || (BUILTIN_DEFAULT_TRACKS.find(t => t.videoId === vid) || {}).audioUrl;
+        if (immediateUrl) {
+          audioUrlCache[vid] = immediateUrl;
+          if (currentLoadedVid !== vid || audio.src !== immediateUrl) {
+            audio.src = immediateUrl;
+            currentLoadedVid = vid;
+          }
+          return;
+        }
+        const resolved = await resolveStreamUrl(track);
+        if (resolved && playerState.currentTrack && (playerState.currentTrack.videoId || playerState.currentTrack.video_id) === vid) {
+          if (currentLoadedVid !== vid || audio.src !== resolved) {
+            audio.src = resolved;
+            currentLoadedVid = vid;
+          }
+        }
+      },
+      async prefetchTrack(track) {
+        if (!track) return;
+        await resolveStreamUrl(track);
+      },
       async playTrack(track) {
         if (!track) return;
         const vid = track.videoId || track.video_id || track.title;
@@ -3165,9 +3217,6 @@ input[type="range"]::-webkit-slider-thumb:hover {
           return;
         }
 
-        // Unlock mobile audio element inside gesture before async resolution
-        nativeAudioPlaying = true;
-        audio.play().catch(() => {});
         const resolvedUrl = await resolveStreamUrl(track);
         if (resolvedUrl && playerState.playbackState === 'PLAYING') {
           audio.src = resolvedUrl;
@@ -3186,12 +3235,18 @@ input[type="range"]::-webkit-slider-thumb:hover {
       seek(seconds) {
         try {
           if (audio.duration && isFinite(audio.duration) && audio.duration > 0) {
-            audio.currentTime = seconds % audio.duration;
+            audio.currentTime = Math.min(seconds, Math.max(0, audio.duration - 0.5));
           }
         } catch (e) {}
       },
       setVolume(volPercent) {
         audio.volume = isMuted ? 0 : Math.max(0, Math.min(1, volPercent / 100));
+      },
+      getCurrentTime() {
+        return (!audio.paused && audio.currentTime > 0) ? audio.currentTime : null;
+      },
+      getDuration() {
+        return (audio.duration && isFinite(audio.duration) && audio.duration > 0) ? audio.duration : null;
       }
     };
   })();
@@ -3567,7 +3622,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
     showToast(`Switched gym to ${currentLocation}`, 'success');
 
     try {
-      await fetch(`${API_BASE}/api/location`, {
+      await apiFetch('/api/location', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ location: currentLocation })
@@ -3608,7 +3663,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         localStorage.setItem('gym_radio_locations', JSON.stringify(saved));
       } catch (e) {}
 
-      fetch(`${API_BASE}/api/locations`, {
+      apiFetch('/api/locations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: raw })
@@ -3620,8 +3675,12 @@ input[type="range"]::-webkit-slider-thumb:hover {
   }
 
   async function fetchLocations() {
+    if (!isDirectBackend) {
+      renderLocations();
+      return;
+    }
     try {
-      const res = await fetch(`${API_BASE}/api/locations`);
+      const res = await apiFetch('/api/locations');
       if (res.ok) {
         const data = await res.json();
         if (data.locations && Array.isArray(data.locations)) {
@@ -3654,23 +3713,11 @@ input[type="range"]::-webkit-slider-thumb:hover {
       if (playerState.playbackState === 'PLAYING') {
         NativeAudioPlayer.playTrack(playerState.currentTrack);
         GymAudioEngine.start();
-        if (ytPlayer) {
-          if (ytPlayer.unMute) ytPlayer.unMute();
-          if (ytPlayer.setVolume) ytPlayer.setVolume(playerState.volume || 100);
-          if (ytPlayer.playVideo) ytPlayer.playVideo();
-        } else {
-          initYouTubePlayer();
-        }
       } else {
-        initYouTubePlayer();
+        NativeAudioPlayer.cueTrack(playerState.currentTrack);
       }
       if (!silent) showToast('Phone Audio ON: Streaming floor audio to your device', 'success');
     } else {
-      if (!isReceptionistMode) {
-        if (ytPlayer && ytPlayer.pauseVideo) {
-          ytPlayer.pauseVideo();
-        }
-      }
       if (!silent) showToast('Phone Audio OFF', 'info');
     }
   }
@@ -3726,129 +3773,22 @@ input[type="range"]::-webkit-slider-thumb:hover {
     }
   }
 
-  // --- YouTube IFrame Player API Integration ---
-
-  window.onYouTubeIframeAPIReady = function () {
-    ytReady = true;
-    if (isReceptionistMode || localAudioEnabled) {
-      initYouTubePlayer();
-    }
-  };
+  // --- Direct Audio Deck Status (No Video IFrame Needed) ---
 
   function initYouTubePlayer() {
-    if (!ytReady || typeof YT === 'undefined' || !YT.Player) {
-      return;
-    }
-    if (ytPlayer) {
-      return;
-    }
-
-    try {
-      ytPlayer = new YT.Player('yt-player', {
-        height: '100%',
-        width: '100%',
-        playerVars: {
-          autoplay: 0,
-          controls: 1,
-          modestbranding: 1,
-          rel: 0,
-          playsinline: 1,
-          origin: window.location.origin
-        },
-        events: {
-          onReady: onPlayerReady,
-          onStateChange: onPlayerStateChange,
-          onError: onPlayerError
-        }
-      });
-    } catch (e) {
-      console.warn('Error instantiating YouTube player:', e);
-    }
-  }
-
-  function onPlayerReady(event) {
     if (el.ytPlaceholder) el.ytPlaceholder.classList.add('hidden');
-    el.playerEngineStatus.textContent = 'READY';
-    el.playerEngineStatus.className = 'text-emerald-400';
-
-    if (playerState.volume !== undefined) {
-      event.target.setVolume(playerState.volume);
-    }
-
-    if (playerState.currentTrack && playerState.currentTrack.videoId) {
-      syncTrackToPlayer(playerState.currentTrack.videoId, playerState.positionSeconds);
-    }
-  }
-
-  function onPlayerStateChange(event) {
-    if (event.data === YT.PlayerState.ENDED) {
-      ytActivelyPlaying = false;
-      const dur = playerState.durationSeconds || (playerState.currentTrack && playerState.currentTrack.duration) || 180;
-      if (playerState.playbackState === 'PLAYING' && playerState.positionSeconds >= dur - 5) {
-        autoAdvanceNextTrack();
-      }
-    } else if (event.data === YT.PlayerState.PLAYING) {
-      // Never allow YouTube iframe to unpause if user state is PAUSED
-      if (playerState.playbackState !== 'PLAYING') {
-        ytActivelyPlaying = false;
-        try {
-          event.target.pauseVideo();
-        } catch (e) {}
-        return;
-      }
-      ytActivelyPlaying = true;
-      audioContextActivated = true;
-      if (el.djInitAudioBtn) el.djInitAudioBtn.classList.add('hidden');
-      if (el.playerEngineStatus) {
-        el.playerEngineStatus.textContent = 'STREAMING LIVE';
-        el.playerEngineStatus.className = 'text-emerald-400';
-      }
-      lastMonotonicTime = performance.now();
-      updateNowPlayingUI();
-      reportProgress();
-    } else {
-      ytActivelyPlaying = false;
-    }
-  }
-
-  function onPlayerError(event) {
-    // Do NOT auto-skip tracks or change playbackState when a YouTube video blocks third-party embeds (Error 101/150).
-    // Instead, fall back cleanly to the built-in Web Audio workout synthesizer for the full song duration.
-    ytActivelyPlaying = false;
     if (el.playerEngineStatus) {
-      el.playerEngineStatus.textContent = 'SYNTH AUDIO ACTIVE';
-      el.playerEngineStatus.className = 'text-cyan-400';
-    }
-    if (playerState.playbackState === 'PLAYING') {
-      GymAudioEngine.start();
+      el.playerEngineStatus.textContent = 'DIRECT AUDIO READY';
+      el.playerEngineStatus.className = 'text-emerald-400 font-bold';
     }
   }
 
   function syncTrackToPlayer(videoId, startSeconds = 0) {
-    if (!ytPlayer) return;
-
-    try {
-      const startSec = Math.floor(startSeconds || 0);
-      const currentUrl = ytPlayer.getVideoUrl ? ytPlayer.getVideoUrl() : '';
-      if (!currentUrl || !currentUrl.includes(videoId)) {
-        if (playerState.playbackState === 'PLAYING' && ytPlayer.loadVideoById) {
-          ytPlayer.loadVideoById({
-            videoId: videoId,
-            startSeconds: startSec
-          });
-        } else if (ytPlayer.cueVideoById) {
-          ytPlayer.cueVideoById({
-            videoId: videoId,
-            startSeconds: startSec
-          });
-        }
-      }
-    } catch (e) {
-      console.warn('Could not sync video to player:', e);
-    }
+    // Handled natively by NativeAudioPlayer (<audio>) without video iframe
   }
 
   function reportProgress() {
+    if (!isDirectBackend) return;
     try {
       const currentPos = playerState.positionSeconds || 0;
       const duration = playerState.durationSeconds || 180;
@@ -3863,7 +3803,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         }));
       }
 
-      fetch(`${API_BASE}/api/receptionist/sync`, {
+      apiFetch('/api/receptionist/sync', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -3948,11 +3888,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
     updateNowPlayingUI();
     renderQueue();
 
-    if (ytPlayer) {
-      syncTrackToPlayer(playerState.currentTrack.videoId, 0);
-    }
-
-    fetch(`${API_BASE}/api/player/next`, { method: 'POST' }).catch(() => {});
+    apiFetch('/api/player/next', { method: 'POST' }).catch(() => {});
   }
   window.autoAdvanceNextTrack = autoAdvanceNextTrack;
 
@@ -4037,8 +3973,9 @@ input[type="range"]::-webkit-slider-thumb:hover {
   // --- REST API Client Methods ---
 
   async function fetchState() {
+    if (!isDirectBackend) return;
     try {
-      const res = await fetch(`${API_BASE}/api/state`);
+      const res = await apiFetch('/api/state');
       if (res.ok) {
         const data = await res.json();
         handleStateUpdate(data);
@@ -4047,8 +3984,9 @@ input[type="range"]::-webkit-slider-thumb:hover {
   }
 
   async function fetchDefaultPlaylist() {
+    if (!isDirectBackend) return;
     try {
-      const res = await fetch(`${API_BASE}/api/default-playlist`);
+      const res = await apiFetch('/api/default-playlist');
       if (res.ok) {
         const tracks = await res.json();
         if (tracks && tracks.length > 0) {
@@ -4064,6 +4002,11 @@ input[type="range"]::-webkit-slider-thumb:hover {
     try {
       const vid = track.videoId || track.video_id;
       const thumb = track.thumbnailUrl || track.thumbnail_url || `https://i.ytimg.com/vi/${vid}/hqdefault.jpg`;
+      if (track.audioUrl) {
+        audioUrlCache[vid] = track.audioUrl;
+      } else {
+        NativeAudioPlayer.prefetchTrack(track);
+      }
       const payload = {
         videoId: vid,
         video_id: vid,
@@ -4072,6 +4015,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         duration: track.duration || 180,
         thumbnailUrl: thumb,
         thumbnail_url: thumb,
+        audioUrl: track.audioUrl || audioUrlCache[vid] || null,
         ldap: currentLdap,
         requestedBy: currentLdap,
         requested_by: currentLdap
@@ -4088,7 +4032,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
           artist: track.artist,
           duration: track.duration || 180,
           thumbnailUrl: thumb,
-          audioUrl: track.audioUrl || null,
+          audioUrl: track.audioUrl || audioUrlCache[vid] || null,
           requestedBy: currentLdap,
           requestedAt: new Date().toISOString(),
           upvotes: 1,
@@ -4104,14 +4048,16 @@ input[type="range"]::-webkit-slider-thumb:hover {
       showToast(`Requested "${track.title}"! Added to queue.`, 'success');
       switchTab('queue');
 
-      const res = await fetch(`${API_BASE}/api/queue`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
+      if (isDirectBackend) {
+        const res = await apiFetch('/api/queue', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
 
-      if (res.ok) {
-        fetchState();
+        if (res.ok) {
+          fetchState();
+        }
       }
     } catch (e) {
       showToast(`Requested "${track.title}"! Added to floor queue.`, 'success');
@@ -4139,15 +4085,20 @@ input[type="range"]::-webkit-slider-thumb:hover {
       renderQueue();
     }
 
+    if (!isDirectBackend) {
+      showToast('Upvoted! Song pushed higher in queue.', 'success');
+      return;
+    }
+
     try {
-      let res = await fetch(`${API_BASE}/api/queue/${queueId}/upvote`, {
+      let res = await apiFetch(`/api/queue/${queueId}/upvote`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ldap: currentLdap, user_ldap: currentLdap })
       });
 
       if (res.status === 404) {
-        res = await fetch(`${API_BASE}/api/upvote`, {
+        res = await apiFetch('/api/upvote', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ queue_id: queueId, id: queueId, ldap: currentLdap, user_ldap: currentLdap })
@@ -4170,9 +4121,6 @@ input[type="range"]::-webkit-slider-thumb:hover {
   async function receptionistPreviousTrack() {
     if (playerState.positionSeconds > 3) {
       NativeAudioPlayer.seek(0);
-      if (ytPlayer && ytPlayer.seekTo) {
-        try { ytPlayer.seekTo(0, true); } catch (e) {}
-      }
       playerState.positionSeconds = 0;
       lastMonotonicTime = performance.now();
       updateNowPlayingUI();
@@ -4197,11 +4145,8 @@ input[type="range"]::-webkit-slider-thumb:hover {
       updateNowPlayingUI();
       renderQueue();
 
-      if (ytPlayer) {
-        syncTrackToPlayer(prevTrack.videoId || prevTrack.video_id, 0);
-      }
       showToast(`Playing previous: ${prevTrack.title}`, 'info');
-      fetch(`${API_BASE}/api/player/previous`, { method: 'POST' }).catch(() => {});
+      apiFetch('/api/player/previous', { method: 'POST' }).catch(() => {});
       return;
     }
 
@@ -4223,11 +4168,8 @@ input[type="range"]::-webkit-slider-thumb:hover {
     updateNowPlayingUI();
     renderQueue();
 
-    if (ytPlayer) {
-      syncTrackToPlayer(playerState.currentTrack.videoId, 0);
-    }
     showToast(`Playing: ${playerState.currentTrack.title}`, 'info');
-    fetch(`${API_BASE}/api/player/previous`, { method: 'POST' }).catch(() => {});
+    apiFetch('/api/player/previous', { method: 'POST' }).catch(() => {});
   }
 
   async function receptionistPlayPause() {
@@ -4241,26 +4183,16 @@ input[type="range"]::-webkit-slider-thumb:hover {
     if (nextState === 'PLAYING') {
       NativeAudioPlayer.playTrack(playerState.currentTrack);
       GymAudioEngine.start();
-      if (ytPlayer) {
-        try {
-          if (ytPlayer.playVideo) ytPlayer.playVideo();
-        } catch (e) {}
-      }
       showToast(`Playing: ${playerState.currentTrack ? playerState.currentTrack.title : 'Gym Radio'}`, 'info');
     } else {
       NativeAudioPlayer.pause();
       GymAudioEngine.stop();
       ytActivelyPlaying = false;
-      if (ytPlayer) {
-        try {
-          if (ytPlayer.pauseVideo) ytPlayer.pauseVideo();
-        } catch (e) {}
-      }
       showToast('Playback Paused', 'info');
     }
 
-    const endpoint = wasPlaying ? `${API_BASE}/api/player/pause` : `${API_BASE}/api/player/play`;
-    fetch(endpoint, { method: 'POST' }).catch(() => {});
+    const endpoint = wasPlaying ? '/api/player/pause' : '/api/player/play';
+    apiFetch(endpoint, { method: 'POST' }).catch(() => {});
   }
 
   async function receptionistRemoveTrack(queueId) {
@@ -4271,7 +4203,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
       renderQueue();
     }
     showToast('Track removed from floor queue.', 'success');
-    fetch(`${API_BASE}/api/receptionist/remove`, {
+    apiFetch('/api/receptionist/remove', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id: queueId, queue_id: queueId })
@@ -4281,6 +4213,11 @@ input[type="range"]::-webkit-slider-thumb:hover {
   // --- WebSocket Connection ---
 
   function connectWebSocket() {
+    if (!isDirectBackend || !WS_BASE) {
+      el.wsIndicator.className = 'inline-block w-2 h-2 rounded-full bg-emerald-400';
+      el.wsStatusText.textContent = 'Floor Synced';
+      return;
+    }
     if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) {
       return;
     }
@@ -4440,6 +4377,13 @@ input[type="range"]::-webkit-slider-thumb:hover {
     el.npArtist.textContent = track.artist || 'Unknown Artist';
     el.npThumbnail.src = thumb;
 
+    const djThumb = document.getElementById('dj-deck-thumb');
+    const djTitle = document.getElementById('dj-deck-title');
+    const djArtist = document.getElementById('dj-deck-artist');
+    if (djThumb) djThumb.src = thumb;
+    if (djTitle) djTitle.textContent = track.title || 'Untitled Track';
+    if (djArtist) djArtist.textContent = track.artist || 'Unknown Artist';
+
     // Requester Badge
     if (isUserRequest && requester) {
       el.npSourceText.textContent = 'User Request';
@@ -4521,6 +4465,9 @@ input[type="range"]::-webkit-slider-thumb:hover {
     const count = items.length;
     el.queueBadgeCount.textContent = (playerState.queue ? playerState.queue.length : 0).toString();
     el.queueHeaderCount.textContent = `5 tracks`;
+
+    // Prefetch direct audio stream URLs for the top 3 upcoming songs so Play/Next is instant on mobile
+    items.slice(0, 3).forEach(t => NativeAudioPlayer.prefetchTrack(t));
 
     if (count === 0) {
       el.queueListContainer.classList.add('hidden');
@@ -4713,22 +4660,24 @@ input[type="range"]::-webkit-slider-thumb:hover {
       let results = [];
       const seenKeys = new Set();
 
-      // 1. Try backend YouTube Music search first
-      try {
-        const res = await fetch(`${API_BASE}/api/search?q=${encodeURIComponent(query)}`);
-        if (res.ok) {
-          const backendTracks = await res.json();
-          if (Array.isArray(backendTracks)) {
-            backendTracks.forEach(t => {
-              const key = `${(t.title || '').toLowerCase()}|${(t.artist || '').toLowerCase()}`;
-              if (!seenKeys.has(key) && isCleanTrackClient(t.title, t.artist, t.isExplicit)) {
-                seenKeys.add(key);
-                results.push(t);
-              }
-            });
+      // 1. Try backend YouTube Music search first when on direct backend
+      if (isDirectBackend) {
+        try {
+          const res = await apiFetch(`/api/search?q=${encodeURIComponent(query)}`);
+          if (res.ok) {
+            const backendTracks = await res.json();
+            if (Array.isArray(backendTracks)) {
+              backendTracks.forEach(t => {
+                const key = `${(t.title || '').toLowerCase()}|${(t.artist || '').toLowerCase()}`;
+                if (!seenKeys.has(key) && isCleanTrackClient(t.title, t.artist, t.isExplicit)) {
+                  seenKeys.add(key);
+                  results.push(t);
+                }
+              });
+            }
           }
-        }
-      } catch (err) {}
+        } catch (err) {}
+      }
 
       // 2. Direct mobile-compatible live catalog search (CORS * enabled, works on all phones without login/VPN)
       if (results.length < 10) {
@@ -4958,9 +4907,6 @@ input[type="range"]::-webkit-slider-thumb:hover {
         playerState.positionSeconds = targetSec;
         lastMonotonicTime = performance.now();
         NativeAudioPlayer.seek(targetSec);
-        if (ytPlayer && ytPlayer.seekTo && ytActivelyPlaying) {
-          try { ytPlayer.seekTo(targetSec, true); } catch (err) {}
-        }
         updateNowPlayingUI();
         reportProgress();
       });
@@ -4982,9 +4928,6 @@ input[type="range"]::-webkit-slider-thumb:hover {
       lastMonotonicTime = performance.now();
       NativeAudioPlayer.playTrack(playerState.currentTrack);
       GymAudioEngine.start();
-      if (ytPlayer && ytPlayer.playVideo) {
-        try { ytPlayer.playVideo(); } catch (e) {}
-      }
       audioContextActivated = true;
       el.djInitAudioBtn.classList.add('hidden');
       updateNowPlayingUI();
@@ -4999,14 +4942,11 @@ input[type="range"]::-webkit-slider-thumb:hover {
       isMuted = val === 0;
       NativeAudioPlayer.setVolume(val);
       GymAudioEngine.setVolume(val);
-      if (ytPlayer && ytPlayer.setVolume) {
-        try { ytPlayer.setVolume(val); } catch (err) {}
-      }
       playerState.volume = val;
 
       if (volumeDebounce) clearTimeout(volumeDebounce);
       volumeDebounce = setTimeout(() => {
-        fetch(`${API_BASE}/api/receptionist/volume`, {
+        apiFetch('/api/receptionist/volume', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ volume: val })
@@ -5020,18 +4960,12 @@ input[type="range"]::-webkit-slider-thumb:hover {
       if (isMuted) {
         NativeAudioPlayer.setVolume(0);
         GymAudioEngine.setVolume(0);
-        if (ytPlayer && ytPlayer.mute) {
-          try { ytPlayer.mute(); } catch (e) {}
-        }
         el.djVolumeSlider.value = 0;
         el.djVolumeDisplay.textContent = '0%';
       } else {
         const vol = playerState.volume || 100;
         NativeAudioPlayer.setVolume(vol);
         GymAudioEngine.setVolume(vol);
-        if (ytPlayer && ytPlayer.unMute) {
-          try { ytPlayer.unMute(); } catch (e) {}
-        }
         el.djVolumeSlider.value = vol;
         el.djVolumeDisplay.textContent = `${vol}%`;
       }
@@ -5056,25 +4990,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
         return;
       }
 
-      // Query true YouTube player time only if YouTube iframe is actively playing without embed error
-      let accurateTime = null;
-      if (ytActivelyPlaying && (isReceptionistMode || localAudioEnabled) && ytPlayer && typeof ytPlayer.getCurrentTime === 'function') {
-        try {
-          const isYtPlaying = ytPlayer.getPlayerState && ytPlayer.getPlayerState() === (window.YT ? YT.PlayerState.PLAYING : 1);
-          if (isYtPlaying) {
-            const t = ytPlayer.getCurrentTime();
-            if (typeof t === 'number' && t > 0) {
-              accurateTime = t;
-            }
-          }
-        } catch (e) {}
-      }
-
-      if (accurateTime !== null && Math.abs(accurateTime - playerState.positionSeconds) < 4) {
-        playerState.positionSeconds = accurateTime;
-      } else {
-        playerState.positionSeconds += elapsedDelta;
-      }
+      playerState.positionSeconds += elapsedDelta;
       window.playerState = playerState;
 
       const duration = playerState.durationSeconds || playerState.currentTrack.duration || 180;
@@ -5098,6 +5014,9 @@ input[type="range"]::-webkit-slider-thumb:hover {
     setupEventListeners();
     setReceptionistMode(isReceptionistMode, true);
     setLocalAudioMode(localAudioEnabled, true);
+
+    // Pre-cue the initial track on the native <audio> element so tapping Play on mobile starts immediately
+    NativeAudioPlayer.cueTrack(playerState.currentTrack);
 
     // Initial autonomous render (starts PAUSED at 00:00 until user clicks Play)
     updateNowPlayingUI();
